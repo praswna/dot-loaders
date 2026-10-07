@@ -12,9 +12,11 @@
 npm run dev
 ```
 
-→ http://localhost:5173 . `python -m http.server 5173` 과 같다. `npx serve .` 도 된다.
+→ http://localhost:5173 . 의존성 없는 작은 서버(`tools/serve.mjs`)가 ES 모듈용 MIME 과 `no-store` 캐시 헤더를 보낸다. `python -m http.server 5173` 이나 `npx serve .` 도 되지만, Windows 의 python 은 `.js` 를 `text/plain` 으로 보내 모듈이 안 뜰 수 있다.
 
-Windows 에서는 `dev.bat` 을 더블클릭하면 된다 (Python 또는 Node.js 중 있는 것으로 서버를 띄우고 브라우저를 연다. `dev.bat 8080` 처럼 포트를 줄 수 있다).
+Windows 에서는 `dev.bat` 을 더블클릭하면 된다 (Node.js, 없으면 Python 으로 서버를 띄우고 브라우저를 연다. `dev.bat 8080` 처럼 포트를 줄 수 있다).
+
+OS 의 **모션 축소**(Windows: 설정 → 접근성 → 시각 효과 → 애니메이션 효과 끔, macOS: 손쉬운 사용 → 동작 줄이기)가 켜져 있으면 엔진은 정지 화면 한 장만 그린다. 갤러리는 이를 알려 주고 "OS 모션 축소 무시" 스위치로 이 페이지에서만 움직이게 할 수 있다. 코드에서는 `mount(el, { reducedMotion: false })`.
 
 갤러리에서 크기·속도·색을 바꾸고, ▶/■ 로 등장·퇴장을 보고, **PNG 시트** 버튼으로 `enter/loop/exit` 시트와 매니페스트 json 을 내려받는다.
 

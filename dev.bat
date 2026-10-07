@@ -16,21 +16,21 @@ echo dot-loaders gallery: %URL%
 echo Press Ctrl+C to stop.
 echo.
 
-rem 1) Python launcher (python.org installs)
+rem 1) Node.js (correct MIME types for ES modules, no caching)
+where node >nul 2>nul && (
+  node tools\serve.mjs %PORT%
+  goto :end
+)
+
+rem 2) Python launcher (python.org installs)
 where py >nul 2>nul && (
   py -3 -m http.server %PORT%
   goto :end
 )
 
-rem 2) python on PATH (the Microsoft Store alias stub fails this check and is skipped)
+rem 3) python on PATH (the Microsoft Store alias stub fails this check and is skipped)
 python -c "pass" >nul 2>nul && (
   python -m http.server %PORT%
-  goto :end
-)
-
-rem 3) Node.js
-where npx >nul 2>nul && (
-  call npx --yes serve -l %PORT% .
   goto :end
 )
 

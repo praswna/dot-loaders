@@ -43,6 +43,10 @@
   }
   button:hover { background: var(--btn-hover); }
   button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .notice {
+    max-width: 1120px; margin: 14px auto 0; padding: 10px 14px; border-radius: 10px; font-size: 13px;
+    background: color-mix(in srgb, var(--accent) 12%, var(--card)); border: 1px solid var(--accent); color: var(--text);
+  }
   .featured {
     max-width: 1120px; margin: 18px auto 0; display: grid; grid-template-columns: 260px 1fr; gap: 16px;
     background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px;
@@ -113,11 +117,14 @@
     <label>색 <input id="color" type="color" value="#d97757"></label>
     <label>굽기 프레임 <input id="bakeFrame" type="number" min="16" max="256" value="48" style="width:64px"></label>
     <label>fps <input id="bakeFps" type="number" min="10" max="60" value="30" style="width:56px"></label>
+    <label id="motionWrap" hidden title="OS 의 모션 축소(애니메이션 효과 끔) 설정이 켜져 있습니다. 끄면 이 페이지에서만 움직입니다"><input id="motion" type="checkbox"> OS 모션 축소 무시</label>
     <button id="theme">🌓 테마</button>
     <button id="playAll">모두 ▶</button>
     <button id="stopAll">모두 ■</button>
   </div>
 </header>
+
+<p class="notice" id="motionNotice" hidden>OS 의 <b>모션 축소</b>(Windows: 설정 → 접근성 → 시각 효과 → 애니메이션 효과) 가 켜져 있어 정지 화면만 보입니다. 위의 "OS 모션 축소 무시" 를 켜면 이 페이지에서만 움직입니다.</p>
 
 <section class="featured">
   <div class="stage"><div id="cycleStage"></div></div>

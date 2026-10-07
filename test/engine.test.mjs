@@ -111,6 +111,19 @@ console.log(`ok  변형 ${list().length}개 장면 샘플링`);
   console.log('ok  순환 (ring → 한 점 → typing → 한 점 → ring), next()');
 }
 
+// ---- 4b. 모션 축소에서도 순환은 변형을 바꾼다 (정지 화면끼리) -----------------------
+{
+  const canvas = new HTMLCanvasElement();
+  const ctl = mount(canvas, { variant: ['ring', 'typing'], size: 20, speed: 8, loops: 1, reducedMotion: true });
+  const seen = new Set([ctl.variant.id]);
+  ctl.onState(() => seen.add(ctl.variant.id));
+  await sleep(600);
+  assert.deepEqual([...seen].sort(), ['ring', 'typing'], `모션 축소에서도 두 변형을 오가야 함 (${[...seen]})`);
+  assert.equal(ctl.state, 'loop');
+  ctl.destroy();
+  console.log('ok  모션 축소에서도 순환');
+}
+
 // ---- 4. 시트 굽기 매니페스트 (캔버스 없이 계산되는 부분만) ----------------------
 {
   globalThis.document = { createElement: () => new HTMLCanvasElement() };

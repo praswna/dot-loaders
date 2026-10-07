@@ -24,6 +24,19 @@ try { theme = localStorage.getItem('dot-loaders.theme') || (matchMedia('(prefers
 applyTheme(theme);
 $('#theme').addEventListener('click', () => applyTheme(root.dataset.theme === 'dark' ? 'light' : 'dark'));
 
+// ---- 모션 축소 ------------------------------------------------------------
+// OS 설정이 켜져 있으면 엔진은 정지 화면만 그린다. 갤러리에서는 알려 주고, 원하면 이 페이지에서만 무시한다.
+const reduceMql = matchMedia('(prefers-reduced-motion: reduce)');
+let ignoreReduce = false;
+try { ignoreReduce = localStorage.getItem('dot-loaders.ignoreReduce') === '1'; } catch {}
+const reducedMotionOpt = () => (ignoreReduce ? false : 'auto');
+function syncMotionUI() {
+  const on = reduceMql.matches;
+  $('#motionWrap').hidden = !on;
+  $('#motionNotice').hidden = !on || ignoreReduce;
+  $('#motion').checked = ignoreReduce;
+}
+
 // ---- 카드 ----------------------------------------------------------------
 const global = { size: Number($('#size').value), speed: 1, color: $('#color').value };
 const cards = [];
@@ -75,8 +88,8 @@ function makeCard(v) {
       <button data-act="copy" title="mount 호출 코드 복사">코드 복사</button>
       <span class="state"></span>
     </div>`;
-  const big = mount(card.querySelector('.big'), { variant: v.id, size: global.size, color: global.color, speed: global.speed });
-  const mini = mount(card.querySelector('.mini-canvas'), { variant: v.id, size: 20, color: global.color, speed: global.speed });
+  const big = mount(card.querySelector('.big'), { variant: v.id, size: global.size, color: global.color, speed: global.speed, reducedMotion: reducedMotionOpt() });
+  const mini = mount(card.querySelector('.mini-canvas'), { variant: v.id, size: 20, color: global.color, speed: global.speed, reducedMotion: reducedMotionOpt() });
   const stateEl = card.querySelector('.state');
   big.onState((s) => { stateEl.textContent = s; });
   stateEl.textContent = big.state;
@@ -101,6 +114,7 @@ for (const v of variants) grid.appendChild(makeCard(v));
 // ---- 순환 재생: 한 점 → 변형 → 한 점 → 다음 변형 … -------------------------------
 const cycleCtl = mount($('#cycleStage'), {
   variant: variants.map((v) => v.id), size: 160, color: global.color, speed: global.speed, loops: 1, dwell: 3000,
+  reducedMotion: reducedMotionOpt(),
 });
 const cycleName = $('#cycleName'), cycleState = $('#cycleState');
 const showCycle = (s) => { cycleName.textContent = cycleCtl.variant.id; cycleState.textContent = s; };
@@ -126,6 +140,15 @@ $('#color').addEventListener('input', (e) => {
   for (const c of cards) { c.big.set({ color: global.color }); c.mini.set({ color: global.color }); }
   cycleCtl.set({ color: global.color });
 });
+const allCtls = () => [cycleCtl, ...cards.flatMap((c) => [c.big, c.mini])];
+$('#motion').addEventListener('change', (e) => {
+  ignoreReduce = e.target.checked;
+  try { localStorage.setItem('dot-loaders.ignoreReduce', ignoreReduce ? '1' : '0'); } catch {}
+  for (const c of allCtls()) c.set({ reducedMotion: reducedMotionOpt() });
+  syncMotionUI();
+});
+reduceMql.addEventListener?.('change', syncMotionUI);
+syncMotionUI();
 $('#playAll').addEventListener('click', () => { for (const c of cards) { c.big.play(); c.mini.play(); } });
 $('#stopAll').addEventListener('click', () => { for (const c of cards) { c.big.stop(); c.mini.stop(); } });
 

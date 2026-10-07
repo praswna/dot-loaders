@@ -193,15 +193,16 @@ export function mount(target, options = {}) {
     if (state === 'idle') { render(null); return; }
 
     if (reduced()) {
-      // 모션 축소: 정지 화면 한 장만. 순환은 변형만 바꾼다
+      // 모션 축소: 정지 화면 한 장만. 순환 중이면 때가 되었을 때 다음 변형의 정지 화면으로 바꾼다
       if (state === 'exit' || stopRequested) { stopRequested = false; nextVariant = null; setState('idle', now); render(null); return; }
       if (state === 'enter') setState('loop', now);
       const stayed = now - phaseStart;
       if (nextVariant || (cycle.length > 1 && stayed >= Math.max(opts.dwell, durationOf('loop') * opts.loops))) {
         variant = nextVariant ?? after(variant); nextVariant = null; setState('loop', now);
-        raf = requestAnimationFrame(tick);
       }
       render(sample(variant, 'loop', variant.loop.rest ?? 0));
+      // 순환 중이거나 설정이 바뀔 수 있으니 계속 틱을 돌린다 (정지 화면이라 비용은 작다)
+      if (cycle.length > 1 || opts.reducedMotion === 'auto') raf = requestAnimationFrame(tick);
       return;
     }
 
@@ -299,6 +300,7 @@ export function mount(target, options = {}) {
       const { variant: _v, ...rest } = next;
       Object.assign(opts, rest);
       if (next.size !== undefined) fit();
+      if (next.reducedMotion !== undefined && state !== 'idle') { phaseStart = now; prevT = 0; }
       if (state === 'idle') render(null);
       else if (paused) render(sample(variant, state, ((now - phaseStart) / durationOf(state)) % 1));
       else schedule();
