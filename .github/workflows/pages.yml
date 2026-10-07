@@ -1,0 +1,37 @@
+# main 에 푸시하면 갤러리를 GitHub Pages 로 배포하고, 빌드 시각·커밋 해시를 version.json 에 넣는다.
+# 저장소 Settings → Pages → Source 를 "GitHub Actions" 로 한 번 바꿔 두어야 한다.
+name: pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: version.json 쓰기
+        run: |
+          printf '{"hash":"%s","builtAt":"%s","repo":"%s"}\n' \
+            "${GITHUB_SHA::7}" "$(TZ=Asia/Seoul date '+%Y.%m.%d %H:%M')" "${GITHUB_REPOSITORY}" > version.json
+          cat version.json
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4

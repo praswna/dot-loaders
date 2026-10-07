@@ -1,0 +1,19 @@
+{
+  "name": "dot-loaders",
+  "version": "0.1.0",
+  "description": "점으로 만든 대기 애니메이션 모음. 캔버스 엔진 + 변형 + 스프라이트 시트 굽기.",
+  "type": "module",
+  "main": "src/dots.js",
+  "exports": {
+    ".": "./src/dots.js",
+    "./variants": "./src/variants/index.js",
+    "./variants/*": "./src/variants/*.js",
+    "./easing": "./src/easing.js"
+  },
+  "files": ["src", "README.md", "LICENSE"],
+  "scripts": {
+    "dev": "python -m http.server 5173",
+    "check": "node --check src/dots.js && node --check src/easing.js && node --input-type=module -e \"import('./src/variants/index.js').then(m=>console.log(m.variants.length+' variants OK'))\""
+  },
+  "license": "MIT"
+}
