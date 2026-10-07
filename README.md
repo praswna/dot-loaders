@@ -131,7 +131,9 @@ npm test
 
 ## 배포
 
-`main` 에 푸시하면 `.github/workflows/pages.yml` 이 갤러리를 GitHub Pages 로 올리고 오른쪽 아래에 `v빌드시각 · 커밋해시` 를 표시한다. 저장소 Settings → Pages → Source 를 **GitHub Actions** 로 한 번 바꿔 두어야 한다.
+`main` 에 푸시하면 `.github/workflows/pages.yml` 이 갤러리를 GitHub Pages 로 올리고 오른쪽 아래에 `v빌드시각 · 커밋해시` 를 표시한다. 첫 실행 때 Pages 를 자동으로 켠다. 실패하면 저장소 Settings → Pages → Source 를 **GitHub Actions** 로 바꾸고 다시 실행한다.
+
+갤러리 주소: https://praswna.github.io/dot-loaders/
 
 ## 라이선스
 

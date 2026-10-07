@@ -1,5 +1,5 @@
 # main 에 푸시하면 갤러리를 GitHub Pages 로 배포하고, 빌드 시각·커밋 해시를 version.json 에 넣는다.
-# 저장소 Settings → Pages → Source 를 "GitHub Actions" 로 한 번 바꿔 두어야 한다.
+# Pages 가 꺼져 있으면 configure-pages 가 켠다. 그래도 안 되면 Settings → Pages → Source 를 "GitHub Actions" 로.
 name: pages
 
 on:
@@ -30,6 +30,8 @@ jobs:
             "${GITHUB_SHA::7}" "$(TZ=Asia/Seoul date '+%Y.%m.%d %H:%M')" "${GITHUB_REPOSITORY}" > version.json
           cat version.json
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true   # Pages 가 꺼져 있으면 켠다 (Source = GitHub Actions)
       - uses: actions/upload-pages-artifact@v3
         with:
           path: .
