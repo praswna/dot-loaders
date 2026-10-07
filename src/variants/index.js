@@ -11,9 +11,28 @@ import orbit from './orbit.js';
 import helix from './helix.js';
 import sineWave from './sine-wave.js';
 import constellation from './constellation.js';
+import typing from './typing.js';
+import ring from './ring.js';
+import cradle from './cradle.js';
+import mitosis from './mitosis.js';
+import hourglass from './hourglass.js';
+import snake from './snake.js';
+import glider from './glider.js';
+import juggle from './juggle.js';
+import radar from './radar.js';
+import gears from './gears.js';
+import infinity from './infinity.js';
+import firework from './firework.js';
+import pong from './pong.js';
+import binary from './binary.js';
+import morse from './morse.js';
+import galaxy from './galaxy.js';
+import interference from './interference.js';
 
 export const variants = [
   claudeCode, gridRotate, scissor, leapfrog, dice, breathe, orbit, helix, sineWave, constellation,
+  typing, ring, cradle, mitosis, hourglass, snake, glider, juggle, radar, gears,
+  infinity, firework, pong, binary, morse, galaxy, interference,
 ].map(register);
 
 export default variants;
