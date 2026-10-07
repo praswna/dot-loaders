@@ -14,6 +14,8 @@ npm run dev
 
 → http://localhost:5173 . `python -m http.server 5173` 과 같다. `npx serve .` 도 된다.
 
+Windows 에서는 `dev.bat` 을 더블클릭하면 된다 (Python 또는 Node.js 중 있는 것으로 서버를 띄우고 브라우저를 연다. `dev.bat 8080` 처럼 포트를 줄 수 있다).
+
 갤러리에서 크기·속도·색을 바꾸고, ▶/■ 로 등장·퇴장을 보고, **PNG 시트** 버튼으로 `enter/loop/exit` 시트와 매니페스트 json 을 내려받는다.
 
 ## 다른 프로젝트에서 쓰기
@@ -64,6 +66,8 @@ const { canvas, manifest } = bakeSpriteSheet('claude-code', { phase: 'loop', fra
 node tools/bake.mjs claude-code --out dist            # enter/loop/exit 시트 + json
 node tools/bake.mjs all --frame 64 --fps 30 --contact  # 전부, 프레임 확인용 contact 이미지 포함
 ```
+
+Windows 에서는 `bake.bat` 을 더블클릭하면 전부를 `dist\` 에 굽는다. 인자를 주면 그대로 `tools/bake.mjs` 에 넘긴다: `bake.bat claude-code --frame 64 --out C:\MyApp\Assets`.
 
 재생법은 claude.ai 와 같다. 높이 `frame` 인 창(Clip) 안에 시트를 넣고, `speed` ms 마다 `-i * frame` 만큼 위로 옮긴다. `enter` 시트를 한 번 → `loop` 시트를 반복 → 멈출 때는 `seams` 중 하나에 닿으면 `exit` 시트를 한 번. 모션 축소 설정이면 `rest` 프레임 한 장만 보여 준다.
 
