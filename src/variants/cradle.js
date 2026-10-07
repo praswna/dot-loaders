@@ -1,7 +1,6 @@
 // 뉴턴의 요람: 다섯 구슬이 실에 매달려 있고, 양 끝 구슬이 번갈아 튀어 오른다.
 // 실은 반지름 0 인 축 점과 구슬을 잇는 선으로 그린다.
 
-import { seg, easeOutBack } from '../easing.js';
 
 const N = 5, R = 0.07, GAP = 2 * R;
 const PIVOT_Y = 0.14, L = 0.42;           // 축 높이, 실 길이
@@ -31,25 +30,12 @@ function loop(t) {
   return scene(angles);
 }
 
-function enter(u) {
-  const s = easeOutBack(seg(u, 0, 0.8));
-  const { dots, links } = scene(new Array(N).fill(0), 1);
-  for (let i = 0; i < N; i++) { dots[i].y = PIVOT_Y + (dots[i].y - PIVOT_Y) * s; dots[i].r = R * Math.max(0, s); }
-  return { dots, links };
-}
 
-function exit(u) {
-  const { dots, links } = scene(new Array(N).fill(0), 1 - u);
-  for (let i = 0; i < N; i++) dots[i].r = R * (1 - u);
-  return { dots, links };
-}
 
 export default {
   id: 'cradle',
   name: '뉴턴의 요람',
   description: '매달린 구슬 다섯. 양 끝이 번갈아 튀어 오르며 운동량을 넘긴다.',
   tags: ['물리', '선'],
-  enter: { duration: 500, frame: enter },
   loop: { duration: 1400, seams: [0, 0.5], rest: 0, frame: loop },
-  exit: { duration: 300, frame: exit },
 };

@@ -43,6 +43,21 @@
   }
   button:hover { background: var(--btn-hover); }
   button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .featured {
+    max-width: 1120px; margin: 18px auto 0; display: grid; grid-template-columns: 260px 1fr; gap: 16px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px;
+  }
+  .featured .stage {
+    display: flex; align-items: center; justify-content: center; height: 220px; border-radius: 10px; background: var(--bg);
+    background-image: radial-gradient(var(--line) 0.6px, transparent 0.6px); background-size: 12px 12px;
+  }
+  .featured-info { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .featured-info h2 { font-size: 16px; margin: 0; display: flex; align-items: baseline; gap: 10px; }
+  .featured-info h2 code { font: 13px var(--mono); color: var(--accent); font-weight: 400; }
+  .featured-info p { margin: 0; color: var(--muted); font-size: 13px; }
+  .featured-info .actions { display: flex; gap: 6px; align-items: center; }
+  .featured-info pre { margin: auto 0 0; padding: 10px 12px; background: var(--bg); border-radius: 8px; font: 12px/1.5 var(--mono); overflow: auto; }
+  @media (max-width: 640px) { .featured { grid-template-columns: 1fr; } }
   .grid {
     max-width: 1120px; margin: 18px auto 0;
     display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px;
@@ -83,7 +98,7 @@
 <body>
 <header>
   <h1>dot-loaders <small>점으로 만든 대기 애니메이션 연구실</small></h1>
-  <p class="lead">각 카드는 한 변형(variant)입니다. 왼쪽은 선택한 크기, 오른쪽은 실제 UI 에 들어갈 20px 크기. ▶ 로 등장·반복, ■ 로 이음새에서 퇴장.</p>
+  <p class="lead">각 카드는 한 변형(variant)입니다. 왼쪽은 선택한 크기, 오른쪽은 실제 UI 에 들어갈 20px 크기. ▶ 로 등장·반복, ■ 로 이음새에서 퇴장. 모든 변형은 가운데 <b>한 점</b>에서 퍼져 나오고 한 점으로 모이므로, 변형 사이를 끊김 없이 오갈 수 있습니다.</p>
   <div class="controls">
     <label>크기
       <select id="size">
@@ -103,6 +118,23 @@
     <button id="stopAll">모두 ■</button>
   </div>
 </header>
+
+<section class="featured">
+  <div class="stage"><div id="cycleStage"></div></div>
+  <div class="featured-info">
+    <h2>순환 재생 <code id="cycleName"></code></h2>
+    <p>한 점 → 변형 → 한 점 → 다음 변형 … 모든 변형을 차례로 돕니다. 각 변형은 한 바퀴 이상, 3초 이상 돈 뒤 다음 이음새에서 한 점으로 모였다가 다음으로 퍼집니다.</p>
+    <div class="actions">
+      <button id="cyclePlay" title="등장 → 순환">▶</button>
+      <button id="cycleStop" title="이음새에서 한 점으로 모여 사라짐">■</button>
+      <button id="cycleNext" title="다음 이음새에서 한 점을 거쳐 다음 변형으로">다음 ⏭</button>
+      <span class="state" id="cycleState"></span>
+    </div>
+    <pre><code>mount(el, { variant: ['claude-code', 'ring', 'snake'], loops: 1, dwell: 3000 });
+loader.next();          // 다음 변형으로 (한 점을 거쳐)
+loader.next('dice');    // 특정 변형으로</code></pre>
+  </div>
+</section>
 
 <main class="grid" id="grid"></main>
 

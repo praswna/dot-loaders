@@ -1,6 +1,5 @@
 // 무한: 점 여섯이 ∞ 곡선(베르누이의 렘니스케이트)을 따라 꼬리를 끌며 달린다.
 
-import { seg, easeOutCubic, easeInQuad } from '../easing.js';
 
 const N = 6, GAP = 0.035, SCALE = 0.4;
 
@@ -21,15 +20,11 @@ function scene(t, k = 1) {
 }
 
 const loop = (t) => scene(t);
-const enter = (u) => scene(0, easeOutCubic(u));
-const exit = (u) => scene(0, 1 - easeInQuad(u));
 
 export default {
   id: 'infinity',
   name: '무한',
   description: '점들이 ∞ 곡선을 따라 꼬리를 끌며 달린다.',
   tags: ['곡선', '꼬리'],
-  enter: { duration: 350, frame: enter },
   loop: { duration: 2400, seams: [0, 0.5], rest: 0, frame: loop },
-  exit: { duration: 300, frame: exit },
 };

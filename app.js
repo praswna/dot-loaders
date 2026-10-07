@@ -65,8 +65,8 @@ function makeCard(v) {
     <div class="meta">
       ${(v.tags ?? []).map((t) => `<span class="tag">${t}</span>`).join('')}
       <span class="tag">loop ${v.loop.duration}ms</span>
-      ${v.enter ? `<span class="tag">enter ${v.enter.duration}ms</span>` : ''}
-      ${v.exit ? `<span class="tag">exit ${v.exit.duration}ms</span>` : ''}
+      <span class="tag" title="${v.enter.generic ? '공통 전이: 한 점에서 퍼짐' : '변형 고유 등장'}">enter ${v.enter.duration}ms${v.enter.generic ? ' ·' : ''}</span>
+      <span class="tag" title="${v.exit.generic ? '공통 전이: 한 점으로 모임' : '변형 고유 퇴장'}">exit ${v.exit.duration}ms${v.exit.generic ? ' ·' : ''}</span>
     </div>
     <div class="actions">
       <button data-act="play" title="등장 → 반복">▶</button>
@@ -98,6 +98,18 @@ function makeCard(v) {
 
 for (const v of variants) grid.appendChild(makeCard(v));
 
+// ---- 순환 재생: 한 점 → 변형 → 한 점 → 다음 변형 … -------------------------------
+const cycleCtl = mount($('#cycleStage'), {
+  variant: variants.map((v) => v.id), size: 160, color: global.color, speed: global.speed, loops: 1, dwell: 3000,
+});
+const cycleName = $('#cycleName'), cycleState = $('#cycleState');
+const showCycle = (s) => { cycleName.textContent = cycleCtl.variant.id; cycleState.textContent = s; };
+cycleCtl.onState(showCycle);
+showCycle(cycleCtl.state);
+$('#cyclePlay').addEventListener('click', () => cycleCtl.play());
+$('#cycleStop').addEventListener('click', () => cycleCtl.stop());
+$('#cycleNext').addEventListener('click', () => cycleCtl.next());
+
 // ---- 전역 컨트롤 ---------------------------------------------------------
 $('#size').addEventListener('change', (e) => {
   global.size = Number(e.target.value);
@@ -107,10 +119,12 @@ $('#speed').addEventListener('input', (e) => {
   global.speed = Number(e.target.value);
   $('#speedVal').textContent = `${global.speed.toFixed(2)}×`;
   for (const c of cards) { c.big.set({ speed: global.speed }); c.mini.set({ speed: global.speed }); }
+  cycleCtl.set({ speed: global.speed });
 });
 $('#color').addEventListener('input', (e) => {
   global.color = e.target.value;
   for (const c of cards) { c.big.set({ color: global.color }); c.mini.set({ color: global.color }); }
+  cycleCtl.set({ color: global.color });
 });
 $('#playAll').addEventListener('click', () => { for (const c of cards) { c.big.play(); c.mini.play(); } });
 $('#stopAll').addEventListener('click', () => { for (const c of cards) { c.big.stop(); c.mini.stop(); } });

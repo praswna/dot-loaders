@@ -32,11 +32,27 @@ const loader = mount(document.querySelector('#loader'), {
   color: '#d97757',
 });
 
-// 응답이 오면: 이음새(seam)에서 퇴장 애니메이션 후 사라짐
+// 응답이 오면: 이음새(seam)에서 한 점으로 모인 뒤 사라짐
 loader.stop();
-// 다시: 등장 → 반복
+// 다시: 한 점에서 퍼지며 등장 → 반복
 loader.play();
+// 다른 변형으로: 다음 이음새에서 한 점을 거쳐 넘어감
+loader.next('snake');
 ```
+
+### 한 점 규칙과 순환
+
+모든 변형은 가운데 **한 점**(`POINT`, 반지름 0.065)에서 퍼져 나오며 시작하고, 끝날 때는 한 점으로 모인다. `enter`/`exit` 를 직접 쓰지 않은 변형에는 엔진이 공통 전이를 붙인다(장면의 점들이 가운데로 모여 하나가 되고 작아짐). 그래서 변형 사이를 끊김 없이 오갈 수 있다.
+
+```js
+// 한 점 → claude-code → 한 점 → ring → 한 점 → snake → 한 점 → claude-code …
+const loader = mount(el, { variant: ['claude-code', 'ring', 'snake'], loops: 1, dwell: 3000 });
+loader.next();          // 지금 바로 다음 변형으로 (다음 이음새에서 한 점을 거쳐)
+loader.next('dice');    // 특정 변형으로
+loader.set({ variant: 'orbit' });  // 돌고 있는 동안 바꿔도 한 점을 거친다
+```
+
+`loops` 는 변형마다 최소 바퀴 수, `dwell` 은 최소 머무는 시간(ms). 둘 다 채운 뒤 첫 이음새에서 넘어간다.
 
 변형 하나만 쓰려면:
 
@@ -69,7 +85,7 @@ node tools/bake.mjs all --frame 64 --fps 30 --contact  # 전부, 프레임 확�
 
 Windows 에서는 `bake.bat` 을 더블클릭하면 전부를 `dist\` 에 굽는다. 인자를 주면 그대로 `tools/bake.mjs` 에 넘긴다: `bake.bat claude-code --frame 64 --out C:\MyApp\Assets`.
 
-재생법은 claude.ai 와 같다. 높이 `frame` 인 창(Clip) 안에 시트를 넣고, `speed` ms 마다 `-i * frame` 만큼 위로 옮긴다. `enter` 시트를 한 번 → `loop` 시트를 반복 → 멈출 때는 `seams` 중 하나에 닿으면 `exit` 시트를 한 번. 모션 축소 설정이면 `rest` 프레임 한 장만 보여 준다.
+재생법은 claude.ai 와 같다. 높이 `frame` 인 창(Clip) 안에 시트를 넣고, `speed` ms 마다 `-i * frame` 만큼 위로 옮긴다. `enter` 시트를 한 번 → `loop` 시트를 반복 → 멈출 때는 `seams` 중 하나에 닿으면 `exit` 시트를 한 번. 모션 축소 설정이면 `rest` 프레임 한 장만 보여 준다. 모든 변형의 `enter` 첫 장과 `exit` 끝 장은 같은 한 점이라, 다른 변형의 시트로 바로 이어 붙일 수 있다. 구워진 `exit` 시트는 `rest` 이음새 장면에서 시작한다(매니페스트 `seam`).
 
 ## API
 
@@ -80,14 +96,15 @@ Windows 에서는 `bake.bat` 을 더블클릭하면 전부를 `dist\` 에 굽는
 | `register(variant)` | 변형 등록 |
 | `get(id)`, `list()` | 등록된 변형 조회 |
 | `mount(target, options)` | 캔버스(또는 부모 요소)에 붙이고 컨트롤러 반환 |
-| `sample(variant, phase, t)` | 한 장면(점 목록) 계산 |
+| `sample(variant, phase, t, seam?)` | 한 장면(점 목록) 계산. `exit` 는 `seam`(이음새 t)에서 이어진다 |
+| `POINT` | 모든 변형이 거쳐 가는 한 점 `{x:.5, y:.5, r:.065}` |
 | `draw(ctx, frame, {size, color, background, offsetX, offsetY})` | 장면을 2D 컨텍스트에 그림 |
 | `bakeSpriteSheet(variant, {phase, frame, fps, color, background, scale})` | 세로 시트 캔버스 + 매니페스트 |
 | `toPngBlob(canvas)` | PNG Blob |
 
-`mount` 옵션: `variant`, `size=48`, `color='#d97757'`, `background=null`, `speed=1`, `autoplay=true`, `enter=true`, `reducedMotion='auto'|true|false`
+`mount` 옵션: `variant`(id 또는 id 배열), `size=48`, `color='#d97757'`, `background=null`, `speed=1`, `autoplay=true`, `enter=true`, `reducedMotion='auto'|true|false`, `loops=1`, `dwell=0`
 
-컨트롤러: `play()`, `stop({immediate})`, `pause()`, `resume()`, `set({...옵션})`, `seek(phase, t)`, `onState(fn)`, `destroy()`, `state`, `variant`, `canvas`
+컨트롤러: `play()`, `stop({immediate})`, `next(id?)`, `pause()`, `resume()`, `set({...옵션})`, `seek(phase, t)`, `onState(fn)`, `destroy()`, `state`, `variant`, `cycle`, `canvas`
 
 ## 변형 만들기
 
@@ -105,10 +122,12 @@ export default {
       // 또는 { dots: [...], links: [{ a: 0, b: 1, alpha: 0.3, width: 0.012 }] }
     },
   },
-  enter: { duration: 400, frame(t) { /* 등장 */ } },   // 선택
-  exit:  { duration: 300, frame(t) { /* 퇴장 */ } },   // 선택
+  enter: { duration: 400, frame(t) { /* 등장 */ } },        // 선택. 없으면 공통 전이(한 점에서 퍼짐)
+  exit:  { duration: 300, frame(t, seam) { /* 퇴장 */ } },  // 선택. 없으면 공통 전이(한 점으로 모임)
 };
 ```
+
+직접 쓸 때도 `enter` 의 t=0 과 `exit` 의 t=1 은 가운데 한 점(`POINT`)이어야 한다. 테스트가 이를 검사한다.
 
 이징은 `src/easing.js` 에 모아 두었다 (`seg`, `lerp`, `easeOutBack`, `cubicBezier`, `polar` …).
 

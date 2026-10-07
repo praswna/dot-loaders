@@ -15,8 +15,50 @@
 //   links: [{ a, b, alpha?, width? }]  (dots 의 인덱스끼리 선 긋기)
 //   seams: 정지 요청이 들어왔을 때 exit 로 넘어가도 어색하지 않은 t 값들 (기본 [0])
 //   rest:  모션 축소 설정일 때 멈춰 보여 줄 t (기본 0)
+//   exit.frame(t, seam): seam 은 loop 에서 빠져나온 이음새 t. 그 장면에서 이어서 퇴장할 수 있다.
+//
+// 한 점 규칙: 모든 변형은 "한 점"(POINT, 가운데 작은 점)에서 퍼져 나와 시작하고, 끝날 때는 한 점으로 모인다.
+// enter/exit 를 직접 쓰지 않은 변형에는 register 가 공통 전이(gather)를 붙인다. 덕분에
+// 한 점 → 변형 A → 한 점 → 변형 B … 처럼 변형 사이를 끊김 없이 순환할 수 있다 (mount 의 variant 배열, loops, dwell).
 
-import { clamp01 } from './easing.js';
+import { clamp01, lerp, seg, easeInQuad, easeOutQuad, easeOutCubic } from './easing.js';
+
+// ---- 공통 전이: 한 점 ↔ 장면 ------------------------------------------------
+/** 모든 변형이 거쳐 가는 한 점. 등장은 여기서 시작하고 퇴장은 여기서 끝난다. */
+export const POINT = Object.freeze({ x: 0.5, y: 0.5, r: 0.065 });
+const SWELL = 0.14; // 퍼지기 직전 / 모인 직후 부풀어 오르는 반지름
+const normalize = (out) => (Array.isArray(out) ? { dots: out, links: [] } : { dots: out?.dots ?? [], links: out?.links ?? [] });
+
+/** 장면(frame)을 한 점 쪽으로 k(0=장면 그대로 .. 1=한 점) 만큼 모은다.
+ *  본 점(반지름 0.03 이상)은 한 점으로 합쳐지고, 격자 표시 같은 장식 점은 모이면서 사라진다. */
+const isBody = (d) => d.r >= 0.03;
+function gather(frame, k, r1 = SWELL) {
+  const dots = frame.dots.map((d) => {
+    const body = isBody(d), a = d.alpha ?? 1;
+    return {
+      x: lerp(d.x, POINT.x, k), y: lerp(d.y, POINT.y, k),
+      r: d.r > 0 ? lerp(d.r, body ? r1 : 0, k) : 0, alpha: lerp(a, body ? 1 : 0, k),
+    };
+  });
+  const links = frame.links.map((l) => ({ ...l, alpha: (l.alpha ?? 0.4) * (1 - k) }));
+  return { dots, links };
+}
+/** 공통 등장: 작은 점이 부풀었다가 장면으로 퍼진다. */
+function genericEnter(loop) {
+  return (u) => {
+    const frame = normalize(loop.frame(0));
+    if (u < 0.3) return gather(frame, 1, lerp(POINT.r, SWELL, easeInQuad(u / 0.3)));
+    return gather(frame, 1 - easeOutCubic(seg(u, 0.3, 1)));
+  };
+}
+/** 공통 퇴장: 이음새 장면이 가운데로 모여 하나가 되고 작아진다. */
+function genericExit(loop) {
+  return (u, seam = 0) => {
+    const frame = normalize(loop.frame(clamp01(seam)));
+    if (u < 0.6) return gather(frame, easeInQuad(u / 0.6));
+    return gather(frame, 1, lerp(SWELL, POINT.r, easeOutQuad(seg(u, 0.6, 1))));
+  };
+}
 
 const registry = new Map();
 
@@ -25,6 +67,8 @@ export function register(variant) {
   if (!variant.loop || typeof variant.loop.frame !== 'function') {
     throw new Error(`${variant.id}: loop.frame(t) 가 필요합니다`);
   }
+  if (!variant.enter) variant.enter = { duration: 500, frame: genericEnter(variant.loop), generic: true };
+  if (!variant.exit) variant.exit = { duration: 360, frame: genericExit(variant.loop), generic: true };
   registry.set(variant.id, variant);
   return variant;
 }
@@ -41,14 +85,12 @@ export function list() {
 
 const resolve = (v) => (typeof v === 'string' ? get(v) : v);
 
-/** 한 장면을 계산한다. phase 가 없는 변형이면 null. */
-export function sample(variant, phase, t) {
+/** 한 장면을 계산한다. phase 가 없는 변형이면 null. seam 은 exit 가 이어받을 loop 의 이음새 t. */
+export function sample(variant, phase, t, seam = 0) {
   const v = resolve(variant);
   const p = v[phase];
   if (!p) return null;
-  const out = p.frame(clamp01(t));
-  if (Array.isArray(out)) return { dots: out, links: [] };
-  return { dots: out?.dots ?? [], links: out?.links ?? [] };
+  return normalize(p.frame(clamp01(t), seam));
 }
 
 /** 장면 하나를 2D 컨텍스트에 그린다. size 는 픽셀 한 변. */
@@ -88,15 +130,19 @@ export function draw(ctx, frame, { size, color = '#d97757', background = null, o
  * 캔버스에 로더를 붙인다.
  * target: <canvas> 또는 캔버스를 넣을 부모 요소.
  * options: { variant, size=48, color='#d97757', background=null, speed=1,
- *            autoplay=true, enter=true, reducedMotion='auto'|true|false }
- * 반환: { canvas, state, variant, play(), stop(), pause(), resume(), set(), seek(), onState(), destroy() }
+ *            autoplay=true, enter=true, reducedMotion='auto'|true|false,
+ *            loops=1, dwell=0 }
+ *   variant 에 배열을 주면 순환한다: 한 점 → A → 한 점 → B → … 각 변형은 loops 바퀴 이상,
+ *   dwell ms 이상 돈 뒤 다음 이음새에서 한 점으로 모였다가 다음 변형으로 퍼진다.
+ * 반환: { canvas, state, variant, play(), stop(), next(), pause(), resume(), set(), seek(), onState(), destroy() }
  */
 export function mount(target, options = {}) {
   const opts = {
     size: 48, color: '#d97757', background: null, speed: 1,
-    autoplay: true, enter: true, reducedMotion: 'auto', ...options,
+    autoplay: true, enter: true, reducedMotion: 'auto', loops: 1, dwell: 0, ...options,
   };
-  let variant = resolve(opts.variant ?? list()[0]?.id);
+  let cycle = (Array.isArray(opts.variant) ? opts.variant : [opts.variant ?? list()[0]?.id]).filter(Boolean).map(resolve);
+  let variant = cycle[0];
   if (!variant) throw new Error('등록된 변형이 없습니다 (variants/index.js 를 import 했는지 확인)');
 
   const canvas = target instanceof HTMLCanvasElement ? target : document.createElement('canvas');
@@ -121,9 +167,12 @@ export function mount(target, options = {}) {
   let prevT = 0;
   let raf = 0;
   let stopRequested = false;
+  let nextVariant = null;   // 다음 이음새에서 한 점을 거쳐 넘어갈 변형
+  let exitSeam = 0;         // exit 가 이어받은 loop 의 이음새 t
   let paused = false;
   let pausedAt = 0;
   const listeners = new Set();
+  const after = (v) => cycle[(cycle.indexOf(v) + 1) % cycle.length] ?? v;
 
   const render = (frame) => {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -144,9 +193,14 @@ export function mount(target, options = {}) {
     if (state === 'idle') { render(null); return; }
 
     if (reduced()) {
-      // 모션 축소: 정지 화면 한 장만
-      if (state === 'exit' || stopRequested) { stopRequested = false; setState('idle', now); render(null); return; }
+      // 모션 축소: 정지 화면 한 장만. 순환은 변형만 바꾼다
+      if (state === 'exit' || stopRequested) { stopRequested = false; nextVariant = null; setState('idle', now); render(null); return; }
       if (state === 'enter') setState('loop', now);
+      const stayed = now - phaseStart;
+      if (nextVariant || (cycle.length > 1 && stayed >= Math.max(opts.dwell, durationOf('loop') * opts.loops))) {
+        variant = nextVariant ?? after(variant); nextVariant = null; setState('loop', now);
+        raf = requestAnimationFrame(tick);
+      }
       render(sample(variant, 'loop', variant.loop.rest ?? 0));
       return;
     }
@@ -154,13 +208,16 @@ export function mount(target, options = {}) {
     const t = (now - phaseStart) / durationOf(state);
     if (state === 'loop') {
       const tl = t % 1;
-      if (stopRequested) {
+      // 순환: 바퀴 수(loops)와 머문 시간(dwell)을 채우면 다음 이음새에서 한 점으로 모여 다음 변형으로
+      if (!nextVariant && !stopRequested && cycle.length > 1 && t >= opts.loops && now - phaseStart >= opts.dwell) nextVariant = after(variant);
+      if (stopRequested || nextVariant) {
         const seams = variant.loop.seams ?? [0];
-        const crossed = seams.some((s) => (prevT <= s && s <= tl) || (prevT > tl && (s >= prevT || s <= tl)));
-        if (crossed) {
+        const seam = seams.find((s) => (prevT <= s && s <= tl) || (prevT > tl && (s >= prevT || s <= tl)));
+        if (seam !== undefined) {
           stopRequested = false;
-          if (variant.exit) { setState('exit', now); render(sample(variant, 'exit', 0)); }
-          else { setState('idle', now); render(null); return; }
+          exitSeam = seam;
+          setState('exit', now);
+          render(sample(variant, 'exit', 0, exitSeam));
           raf = requestAnimationFrame(tick);
           return;
         }
@@ -171,8 +228,13 @@ export function mount(target, options = {}) {
       if (t >= 1) { setState('loop', now); render(sample(variant, 'loop', 0)); }
       else render(sample(variant, 'enter', t));
     } else if (state === 'exit') {
-      if (t >= 1) { setState('idle', now); render(null); return; }
-      render(sample(variant, 'exit', t));
+      if (t >= 1) {
+        if (nextVariant) {
+          // 한 점에서 다음 변형으로 퍼진다
+          variant = nextVariant; nextVariant = null;
+          setState('enter', now); render(sample(variant, 'enter', 0));
+        } else { setState('idle', now); render(null); return; }
+      } else render(sample(variant, 'exit', t, exitSeam));
     }
     raf = requestAnimationFrame(tick);
   }
@@ -184,6 +246,8 @@ export function mount(target, options = {}) {
     get state() { return state; },
     get variant() { return variant; },
     get options() { return { ...opts, variant: variant.id }; },
+
+    get cycle() { return cycle.map((v) => v.id); },
 
     /** 등장(enter) → 반복(loop). 이미 돌고 있으면 정지 요청만 취소. */
     play({ enter = opts.enter } = {}) {
@@ -197,8 +261,19 @@ export function mount(target, options = {}) {
     /** 이음새(seam)에서 퇴장(exit) 후 사라짐. immediate 면 즉시. */
     stop({ immediate = false } = {}) {
       if (state === 'idle') return api;
+      nextVariant = null;
       if (immediate || !variant.exit) { cancel(); setState('idle', performance.now()); render(null); return api; }
       stopRequested = true;
+      paused = false;
+      schedule();
+      return api;
+    },
+    /** 다음 이음새에서 한 점으로 모였다가 다른 변형으로 퍼진다. id 를 주면 그 변형, 없으면 순환 목록의 다음. */
+    next(id) {
+      const target = id !== undefined ? resolve(id) : after(variant);
+      if (state === 'idle') { variant = target; return api.play(); }
+      nextVariant = target;
+      stopRequested = false;
       paused = false;
       schedule();
       return api;
@@ -216,8 +291,10 @@ export function mount(target, options = {}) {
         phaseStart = now - elapsed * durationOf(state);
       }
       if (next.variant !== undefined) {
-        variant = resolve(next.variant);
-        if (state !== 'idle') setState('loop', now);
+        // 돌고 있는 동안 바꾸면 바로 갈아끼우지 않고 한 점을 거쳐 넘어간다
+        cycle = (Array.isArray(next.variant) ? next.variant : [next.variant]).map(resolve);
+        if (state === 'idle') variant = cycle[0];
+        else if (!cycle.includes(variant)) api.next(cycle[0]);
       }
       const { variant: _v, ...rest } = next;
       Object.assign(opts, rest);
@@ -258,9 +335,10 @@ export function bakeSpriteSheet(variant, {
   for (let i = 0; i < frames; i++) {
     // loop 는 t=1 이 t=0 과 같으니 마지막 프레임을 빼고, enter/exit 는 끝 장면까지 포함
     const t = phase === 'loop' ? i / frames : i / Math.max(1, frames - 1);
-    draw(ctx, sample(v, phase, t), { size: px, color, background, offsetY: i * px });
+    draw(ctx, sample(v, phase, t, v.loop.rest ?? 0), { size: px, color, background, offsetY: i * px });
   }
   const manifest = { variant: v.id, phase, frames, speed: +speed.toFixed(4), frame: px, fps };
+  if (phase === 'exit') manifest.seam = Math.round((v.loop.rest ?? 0) * Math.max(1, Math.round(v.loop.duration / speed)));
   if (phase === 'loop') {
     manifest.seams = (v.loop.seams ?? [0]).map((s) => Math.round(s * frames) % frames);
     manifest.rest = Math.round((v.loop.rest ?? 0) * frames) % frames;
