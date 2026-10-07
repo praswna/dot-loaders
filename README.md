@@ -171,7 +171,9 @@ npm test
 
 ## 배포
 
-`main` 에 푸시하면 `.github/workflows/pages.yml` 이 갤러리를 GitHub Pages 로 올리고 오른쪽 아래에 `v빌드시각 · 커밋해시` 를 표시한다. 첫 실행 때 Pages 를 자동으로 켠다. 실패하면 저장소 Settings → Pages → Source 를 **GitHub Actions** 로 바꾸고 다시 실행한다.
+`main` 에 푸시하면 `.github/workflows/pages.yml` 이 갤러리를 GitHub Pages 로 올리고 오른쪽 아래에 `v빌드시각 · 커밋해시` 를 표시한다.
+
+**Pages 는 공개 저장소이거나 유료 플랜(Pro/Team)이어야 켜진다.** 비공개 저장소 + 무료 플랜이면 워크플로가 `configure-pages` 단계에서 `Resource not accessible by integration` 으로 멈추고 사이트가 만들어지지 않는다. 이때는 저장소를 공개로 바꾸거나(Settings → General → Danger Zone → Change visibility), 로컬에서 `npm run dev` / `dev.bat` 으로 본다. 공개로 바꾼 뒤에도 안 되면 Settings → Pages → Source 를 **GitHub Actions** 로 바꾸고 Actions 탭에서 `pages` 워크플로를 다시 실행한다.
 
 갤러리 주소: https://praswna.github.io/dot-loaders/
 
