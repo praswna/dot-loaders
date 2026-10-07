@@ -58,6 +58,13 @@ const { canvas, manifest } = bakeSpriteSheet('claude-code', { phase: 'loop', fra
 // manifest = { variant, phase, frames: 75, speed: 33.3333, frame: 48, fps: 30, seams: [0,19,38,56], rest: 0 }
 ```
 
+브라우저 없이 명령줄에서 구우려면 (의존성 없음):
+
+```bash
+node tools/bake.mjs claude-code --out dist            # enter/loop/exit 시트 + json
+node tools/bake.mjs all --frame 64 --fps 30 --contact  # 전부, 프레임 확인용 contact 이미지 포함
+```
+
 재생법은 claude.ai 와 같다. 높이 `frame` 인 창(Clip) 안에 시트를 넣고, `speed` ms 마다 `-i * frame` 만큼 위로 옮긴다. `enter` 시트를 한 번 → `loop` 시트를 반복 → 멈출 때는 `seams` 중 하나에 닿으면 `exit` 시트를 한 번. 모션 축소 설정이면 `rest` 프레임 한 장만 보여 준다.
 
 ## API
@@ -101,10 +108,10 @@ export default {
 
 이징은 `src/easing.js` 에 모아 두었다 (`seg`, `lerp`, `easeOutBack`, `cubicBezier`, `polar` …).
 
-점검:
+점검 (문법 + 모든 변형 장면 샘플링 + 엔진 상태 전이 테스트):
 
 ```bash
-npm run check
+npm test
 ```
 
 ## 들어 있는 변형
