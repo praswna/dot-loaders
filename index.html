@@ -62,6 +62,17 @@
   .featured-info .actions { display: flex; gap: 6px; align-items: center; }
   .featured-info pre { margin: auto 0 0; padding: 10px 12px; background: var(--bg); border-radius: 8px; font: 12px/1.5 var(--mono); overflow: auto; }
   @media (max-width: 640px) { .featured { grid-template-columns: 1fr; } }
+  .chips { max-width: 1120px; margin: 18px auto 0; display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips button { border-radius: 999px; padding: 4px 12px; font-size: 13px; }
+  .chips button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .chips button .n { opacity: .7; margin-left: 4px; font-size: 11px; }
+  .group { max-width: 1120px; margin: 26px auto 0; }
+  .group[hidden] { display: none; }
+  .group > header { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; padding: 0; margin: 0; max-width: none; }
+  .group > header h2 { font-size: 17px; margin: 0; }
+  .group > header p { margin: 0; color: var(--muted); font-size: 13px; }
+  .group > header button { margin-left: auto; font-size: 12px; padding: 3px 10px; }
+  .group .grid { margin-top: 10px; }
   .grid {
     max-width: 1120px; margin: 18px auto 0;
     display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px;
@@ -143,7 +154,9 @@ loader.next('dice');    // 특정 변형으로</code></pre>
   </div>
 </section>
 
-<main class="grid" id="grid"></main>
+<nav class="chips" id="chips" aria-label="카테고리"></nav>
+
+<main id="groups"></main>
 
 <footer id="version">dev</footer>
 <div class="toast" id="toast"></div>

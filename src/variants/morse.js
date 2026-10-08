@@ -57,6 +57,7 @@ function loop(t) {
 
 export default {
   id: 'morse',
+  category: 'grid',
   name: '모스 부호',
   description: '"WAIT" 를 모스 부호로 친다. 전건이 깜빡이고 점·선이 차례로 밝아진다.',
   tags: ['선', '문자'],

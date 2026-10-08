@@ -21,6 +21,7 @@ function loop(t) {
 
 export default {
   id: 'leapfrog',
+  category: 'swap',
   name: '개구리 뛰기',
   description: '맨 뒤 점이 앞으로 뛰어넘고 줄이 한 칸 당겨진다. 끝없이 전진하는 느낌.',
   tags: ['가로', '점프'],

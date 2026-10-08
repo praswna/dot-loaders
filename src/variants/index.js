@@ -35,4 +35,5 @@ export const variants = [
   infinity, firework, pong, binary, morse, galaxy, interference,
 ].map(register);
 
+export { categories, categoryOf } from '../categories.js';
 export default variants;

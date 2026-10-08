@@ -37,6 +37,7 @@ function loop(t) {
 
 export default {
   id: 'mitosis',
+  category: 'morph',
   name: '세포 분열',
   description: '하나가 둘로, 둘이 넷으로 갈라졌다가 다시 하나로 합쳐진다.',
   tags: ['변신', '유기적'],

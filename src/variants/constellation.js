@@ -28,6 +28,7 @@ function loop(t) {
 
 export default {
   id: 'constellation',
+  category: 'drift',
   name: '별자리',
   description: '점들이 떠다니다 가까워지면 선으로 이어진다. 느긋하고 사색적인 대기 표시.',
   tags: ['자유', '선'],

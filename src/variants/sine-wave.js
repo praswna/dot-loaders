@@ -13,6 +13,7 @@ function loop(t) {
 
 export default {
   id: 'sine-wave',
+  category: 'wave',
   name: '물결',
   description: '가로 다섯 점이 사인파로 출렁인다. 기준점 삼기 좋은 고전형.',
   tags: ['가로', '고전'],

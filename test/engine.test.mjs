@@ -40,6 +40,15 @@ for (const v of list()) {
 }
 console.log(`ok  변형 ${list().length}개 장면 샘플링`);
 
+// ---- 1b. 모든 변형은 알려진 카테고리에 속한다 -----------------------------------
+{
+  const { categories } = await import('../src/categories.js');
+  const ids = new Set(categories.map((c) => c.id));
+  for (const v of list()) assert.ok(ids.has(v.category), `${v.id}: 카테고리가 없거나 모름 (${v.category})`);
+  for (const c of categories) assert.ok(list().some((v) => v.category === c.id), `카테고리 ${c.id} 에 변형이 없음`);
+  console.log(`ok  카테고리 ${categories.length}개에 변형 ${list().length}개 배정`);
+}
+
 // ---- 2. 상태 전이 ----------------------------------------------------------
 {
   const canvas = new HTMLCanvasElement();

@@ -41,6 +41,7 @@ function loop(u) {
 
 export default {
   id: 'orbit',
+  category: 'spin',
   name: '궤도',
   description: '세 점이 3D 원 궤도를 돈다. 궤도면이 천천히 기울고 돌아 모양이 계속 바뀐다.',
   tags: ['원형', '3D'],

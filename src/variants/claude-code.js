@@ -76,6 +76,7 @@ function exit(u) {
 
 export default {
   id: 'claude-code',
+  category: 'swap',
   name: 'Claude code 마크',
   description: 'claude.ai Code 탭 대기 표시 재현. 대각선 짝이 S자로 자리를 바꾼다 (TL↔BR, TR↔BL 번갈아).',
   tags: ['재현', '2x2'],

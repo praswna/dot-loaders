@@ -1,9 +1,8 @@
 // 갤러리 페이지. 엔진과 변형을 불러와 카드로 늘어놓는다.
 import { mount, bakeSpriteSheet, toPngBlob } from './src/dots.js';
-import { variants } from './src/variants/index.js';
+import { variants, categories } from './src/variants/index.js';
 
 const $ = (sel) => document.querySelector(sel);
-const grid = $('#grid');
 const toastEl = $('#toast');
 let toastTimer = 0;
 function toast(msg) {
@@ -109,20 +108,67 @@ function makeCard(v) {
   return card;
 }
 
-for (const v of variants) grid.appendChild(makeCard(v));
+// ---- 카테고리별 묶음 --------------------------------------------------------
+const groupsEl = $('#groups');
+const groupEls = new Map();
+for (const c of categories) {
+  const members = variants.filter((v) => v.category === c.id);
+  if (!members.length) continue;
+  const sec = document.createElement('section');
+  sec.className = 'group';
+  sec.dataset.cat = c.id;
+  sec.innerHTML = `<header><h2>${c.name}</h2><p>${c.description}</p><button data-cycle="${c.id}" title="위 무대에서 이 카테고리만 순환">이것만 순환 ▶</button></header><div class="grid"></div>`;
+  const g = sec.querySelector('.grid');
+  for (const v of members) g.appendChild(makeCard(v));
+  groupsEl.appendChild(sec);
+  groupEls.set(c.id, sec);
+}
 
 // ---- 순환 재생: 한 점 → 변형 → 한 점 → 다음 변형 … -------------------------------
+// 카테고리 순서대로 돌도록 정렬
+const ordered = categories.flatMap((c) => variants.filter((v) => v.category === c.id));
 const cycleCtl = mount($('#cycleStage'), {
-  variant: variants.map((v) => v.id), size: 160, color: global.color, speed: global.speed, loops: 1, dwell: 3000,
+  variant: ordered.map((v) => v.id), size: 160, color: global.color, speed: global.speed, loops: 1, dwell: 3000,
   reducedMotion: reducedMotionOpt(),
 });
 const cycleName = $('#cycleName'), cycleState = $('#cycleState');
-const showCycle = (s) => { cycleName.textContent = cycleCtl.variant.id; cycleState.textContent = s; };
+const catName = (id) => categories.find((c) => c.id === id)?.name ?? '';
+const showCycle = (s) => { cycleName.textContent = `${catName(cycleCtl.variant.category)} · ${cycleCtl.variant.id}`; cycleState.textContent = s; };
 cycleCtl.onState(showCycle);
 showCycle(cycleCtl.state);
 $('#cyclePlay').addEventListener('click', () => cycleCtl.play());
 $('#cycleStop').addEventListener('click', () => cycleCtl.stop());
 $('#cycleNext').addEventListener('click', () => cycleCtl.next());
+
+// ---- 카테고리 필터: 카드를 거르고, 순환 무대도 그 카테고리만 돈다 ---------------------
+const chipsEl = $('#chips');
+let currentCat = 'all';
+function selectCategory(id, { scroll = false } = {}) {
+  currentCat = id;
+  for (const b of chipsEl.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.cat === id));
+  for (const [cid, sec] of groupEls) sec.hidden = id !== 'all' && cid !== id;
+  const ids = (id === 'all' ? ordered : ordered.filter((v) => v.category === id)).map((v) => v.id);
+  cycleCtl.set({ variant: ids });      // 돌고 있으면 한 점을 거쳐 넘어간다
+  if (cycleCtl.state === 'idle') cycleCtl.play();
+  try { localStorage.setItem('dot-loaders.cat', id); } catch {}
+  if (scroll) $('.featured').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+const chip = (id, label, n) => {
+  const b = document.createElement('button');
+  b.dataset.cat = id;
+  b.innerHTML = `${label}<span class="n">${n}</span>`;
+  b.addEventListener('click', () => selectCategory(id));
+  chipsEl.appendChild(b);
+};
+chip('all', '전체', variants.length);
+for (const c of categories) { const n = variants.filter((v) => v.category === c.id).length; if (n) chip(c.id, c.name, n); }
+groupsEl.addEventListener('click', (e) => {
+  const id = e.target.closest('button[data-cycle]')?.dataset.cycle;
+  if (id) selectCategory(id, { scroll: true });
+});
+let savedCat = 'all';
+try { savedCat = localStorage.getItem('dot-loaders.cat') || 'all'; } catch {}
+selectCategory(groupEls.has(savedCat) ? savedCat : 'all');
 
 // ---- 전역 컨트롤 ---------------------------------------------------------
 $('#size').addEventListener('change', (e) => {
