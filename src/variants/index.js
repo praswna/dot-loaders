@@ -1,4 +1,5 @@
 // 모든 변형을 등록한다. 새 변형을 만들면 여기에 한 줄 추가.
+// 보관(tools/archive.mjs)하면 이 파일이 다시 쓰이니 import 줄 형식(import x from './id.js';)을 지킬 것.
 import { register } from '../dots.js';
 
 import claudeCode from './claude-code.js';
@@ -30,9 +31,10 @@ import galaxy from './galaxy.js';
 import interference from './interference.js';
 
 export const variants = [
-  claudeCode, gridRotate, scissor, leapfrog, dice, breathe, orbit, helix, sineWave, constellation,
-  typing, ring, cradle, mitosis, hourglass, snake, glider, juggle, radar, gears,
-  infinity, firework, pong, binary, morse, galaxy, interference,
+  claudeCode, gridRotate, scissor, leapfrog, dice, breathe, orbit, helix,
+  sineWave, constellation, typing, ring, cradle, mitosis, hourglass, snake,
+  glider, juggle, radar, gears, infinity, firework, pong, binary,
+  morse, galaxy, interference,
 ].map(register);
 
 export { categories, categoryOf } from '../categories.js';

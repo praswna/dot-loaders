@@ -45,7 +45,6 @@ console.log(`ok  변형 ${list().length}개 장면 샘플링`);
   const { categories } = await import('../src/categories.js');
   const ids = new Set(categories.map((c) => c.id));
   for (const v of list()) assert.ok(ids.has(v.category), `${v.id}: 카테고리가 없거나 모름 (${v.category})`);
-  for (const c of categories) assert.ok(list().some((v) => v.category === c.id), `카테고리 ${c.id} 에 변형이 없음`);
   console.log(`ok  카테고리 ${categories.length}개에 변형 ${list().length}개 배정`);
 }
 
@@ -131,6 +130,37 @@ console.log(`ok  변형 ${list().length}개 장면 샘플링`);
   assert.equal(ctl.state, 'loop');
   ctl.destroy();
   console.log('ok  모션 축소에서도 순환');
+}
+
+// ---- 4c. 보관: 파일이 archive 폴더로 옮겨지고, 두 목록이 다시 쓰이고, 그대로 불러와진다 ------
+{
+  const { mkdtemp, cp, readFile, access, rm } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { archiveVariant, restoreVariant, archivedIds } = await import('../tools/archive.mjs');
+  const root = await mkdtemp(join(tmpdir(), 'dot-loaders-'));
+  await cp(new URL('../src', import.meta.url), join(root, 'src'), { recursive: true });
+  await cp(new URL('../package.json', import.meta.url), join(root, 'package.json'));
+  const exists = (p) => access(p).then(() => true, () => false);
+  try {
+    const r = await archiveVariant('dice', root);
+    assert.equal(r.file, 'src/variants/archive/dice.js');
+    assert.ok(await exists(join(root, r.file)) && !(await exists(join(root, 'src/variants/dice.js'))), '파일이 옮겨져야 함');
+    assert.match(await readFile(join(root, r.file), 'utf8'), /from '\.\.\/\.\.\/easing\.js'/, 'import 경로가 한 단계 깊어져야 함');
+    assert.deepEqual(await archivedIds(root), ['dice']);
+    assert.ok(!(await readFile(join(root, 'src/variants/index.js'), 'utf8')).includes("'./dice.js'"), '라이브러리 목록에서 빠져야 함');
+    // 새 경로에서 그대로 불러와지는지 (별도 프로세스: 모듈 캐시와 레지스트리를 섞지 않게)
+    const { execFileSync } = await import('node:child_process');
+    const out = execFileSync(process.execPath, ['--input-type=module', '-e',
+      `const a = await import(${JSON.stringify(join(root, 'src/variants/index.js'))}); const b = await import(${JSON.stringify(join(root, 'src/variants/archive/index.js'))}); console.log(a.variants.length + ' ' + b.archived.map(v => v.id).join(','));`]).toString().trim();
+    assert.equal(out, `${list().length - 1} dice`);
+    await assert.rejects(archiveVariant('dice', root), /라이브러리에 없습니다/);
+    await assert.rejects(archiveVariant('../evil', root), /잘못된 id/);
+    await restoreVariant('dice', root);
+    assert.ok(await exists(join(root, 'src/variants/dice.js')) && (await archivedIds(root)).length === 0, '꺼내면 되돌아와야 함');
+    assert.match(await readFile(join(root, 'src/variants/dice.js'), 'utf8'), /from '\.\.\/easing\.js'/);
+  } finally { await rm(root, { recursive: true, force: true }); }
+  console.log('ok  보관·꺼내기 (파일 이동, 목록 갱신, import 경로, 다시 불러오기)');
 }
 
 // ---- 4. 시트 굽기 매니페스트 (캔버스 없이 계산되는 부분만) ----------------------

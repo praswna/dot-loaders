@@ -108,6 +108,22 @@ Windows 에서는 `bake.bat` 을 더블클릭하면 전부를 `dist\` 에 굽는
 
 컨트롤러: `play()`, `stop({immediate})`, `next(id?)`, `pause()`, `resume()`, `set({...옵션})`, `seek(phase, t)`, `onState(fn)`, `destroy()`, `state`, `variant`, `cycle`, `canvas`
 
+## 보관함
+
+안 쓸 변형은 지우지 말고 보관한다. 갤러리 카드의 **보관** 버튼을 누르면 맨 아래 "보관함" 으로 옮겨지고, 순환 재생과 카테고리 칩에서도 빠진다. **꺼내기** 로 되돌린다.
+
+- 개발 서버(`npm run dev`, `dev.bat`)로 연 갤러리에서는 **파일이 실제로 옮겨진다.** `src/variants/<id>.js` → `src/variants/archive/<id>.js`, 라이브러리 목록 `src/variants/index.js` 에서 빠지고 `src/variants/archive/index.js` 에 들어간다. 바뀐 파일은 git 으로 커밋한다.
+- 다른 서버나 정적 호스팅으로 열면 파일을 못 건드리므로 그 브라우저에만 기억한다.
+- 명령줄로도 된다:
+
+```bash
+node tools/archive.mjs archive dice    # 보관
+node tools/archive.mjs restore dice    # 꺼내기
+node tools/archive.mjs list            # 보관된 것
+```
+
+보관된 변형은 라이브러리(`import './src/variants/index.js'`)와 `tools/bake.mjs all` 에 들어가지 않는다.
+
 ## 변형 만들기
 
 `src/variants/내-변형.js` 를 만들고 `src/variants/index.js` 에 한 줄 추가한다. 좌표계는 한 변이 1 인 정사각형, 반지름도 비율이다.

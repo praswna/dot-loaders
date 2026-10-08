@@ -1,6 +1,7 @@
 // 갤러리 페이지. 엔진과 변형을 불러와 카드로 늘어놓는다.
 import { mount, bakeSpriteSheet, toPngBlob } from './src/dots.js';
 import { variants, categories } from './src/variants/index.js';
+import { archived as archivedVariants } from './src/variants/archive/index.js';
 
 const $ = (sel) => document.querySelector(sel);
 const toastEl = $('#toast');
@@ -85,6 +86,7 @@ function makeCard(v) {
       <button data-act="stop" title="이음새에서 퇴장">■</button>
       <button data-act="bake" title="PNG 스프라이트 시트 + json 내려받기">PNG 시트</button>
       <button data-act="copy" title="mount 호출 코드 복사">코드 복사</button>
+      <button data-act="archive" class="archive-btn"></button>
       <span class="state"></span>
     </div>`;
   const big = mount(card.querySelector('.big'), { variant: v.id, size: global.size, color: global.color, speed: global.speed, reducedMotion: reducedMotionOpt() });
@@ -99,36 +101,107 @@ function makeCard(v) {
     if (act === 'play') { big.play(); mini.play(); }
     else if (act === 'stop') { big.stop(); mini.stop(); }
     else if (act === 'bake') await bake(v);
+    else if (act === 'archive') await toggleArchive(v.id);
     else if (act === 'copy') {
       const code = `import { mount } from './src/dots.js';\nimport './src/variants/index.js';\n\nconst loader = mount(document.querySelector('#loader'), { variant: '${v.id}', size: 20, color: '${global.color}' });\n// loader.stop();  // 이음새에서 퇴장 후 사라짐`;
       try { await navigator.clipboard.writeText(code); toast('복사했습니다'); } catch { toast('클립보드를 쓸 수 없습니다'); }
     }
   });
-  cards.push({ v, big, mini });
+  cards.push({ v, big, mini, card });
   return card;
 }
 
-// ---- 카테고리별 묶음 --------------------------------------------------------
+// ---- 보관 상태 ---------------------------------------------------------------
+// 개발 서버(tools/serve.mjs)로 열면 /api 로 파일을 실제로 src/variants/archive/ 로 옮긴다.
+// 그 밖(python 서버, 정적 호스팅)에서는 이 브라우저에만 기억한다(localStorage). 파일은 그대로.
+const all = [...variants, ...archivedVariants];
+const byId = new Map(all.map((v) => [v.id, v]));
+const fileArchived = new Set(archivedVariants.map((v) => v.id));   // 실제로 archive 폴더에 있는 것
+let localArchived = new Set();
+try { localArchived = new Set(JSON.parse(localStorage.getItem('dot-loaders.archived') || '[]')); } catch {}
+const saveLocal = () => { try { localStorage.setItem('dot-loaders.archived', JSON.stringify([...localArchived])); } catch {} };
+let serverMode = false;
+const isArchived = (id) => fileArchived.has(id) || (!serverMode && localArchived.has(id));
+
+// ---- 카테고리별 묶음 + 보관함 ----------------------------------------------------
 const groupsEl = $('#groups');
 const groupEls = new Map();
 for (const c of categories) {
-  const members = variants.filter((v) => v.category === c.id);
-  if (!members.length) continue;
   const sec = document.createElement('section');
   sec.className = 'group';
   sec.dataset.cat = c.id;
   sec.innerHTML = `<header><h2>${c.name}</h2><p>${c.description}</p><button data-cycle="${c.id}" title="위 무대에서 이 카테고리만 순환">이것만 순환 ▶</button></header><div class="grid"></div>`;
-  const g = sec.querySelector('.grid');
-  for (const v of members) g.appendChild(makeCard(v));
   groupsEl.appendChild(sec);
   groupEls.set(c.id, sec);
 }
+const archiveBox = $('#archiveBox'), archiveGrid = $('#archiveGrid');
+const cardOf = new Map();
+for (const c of categories) for (const v of all.filter((v) => v.category === c.id)) { makeCard(v); cardOf.set(v.id, cards[cards.length - 1]); }
+
+function place(id) {
+  const c = cardOf.get(id);
+  const arch = isArchived(id);
+  const btn = c.card.querySelector('.archive-btn');
+  btn.textContent = arch ? '꺼내기' : '보관';
+  btn.title = arch ? '보관함에서 꺼내 라이브러리로 되돌림' : '보관함으로 옮김 (라이브러리에서 뺌)';
+  c.card.classList.toggle('archived', arch);
+  if (arch) {
+    archiveGrid.appendChild(c.card);
+    // 보관함에서는 멈춘 한 장면만 (▶ 로 다시 볼 수 있음)
+    c.big.seek('loop', c.v.loop.rest ?? 0); c.mini.seek('loop', c.v.loop.rest ?? 0);
+    c.card.querySelector('.state').textContent = '보관됨';
+  } else {
+    // 카테고리 안의 원래 순서대로 끼워 넣기
+    const grid = groupEls.get(c.v.category).querySelector('.grid');
+    const order = all.filter((v) => v.category === c.v.category).map((v) => v.id);
+    const after = [...grid.children].find((el) => order.indexOf(el.dataset.id) > order.indexOf(id));
+    grid.insertBefore(c.card, after ?? null);
+    c.big.play(); c.mini.play();
+  }
+}
+for (const c of cards) c.card.dataset.id = c.v.id;
+
+const activeOrdered = () => categories.flatMap((c) => all.filter((v) => v.category === c.id && !isArchived(v.id)));
+
+function refreshCounts() {
+  const active = activeOrdered();
+  for (const b of chipsEl.querySelectorAll('button')) {
+    const n = b.dataset.cat === 'all' ? active.length : active.filter((v) => v.category === b.dataset.cat).length;
+    b.querySelector('.n').textContent = n;
+    b.hidden = b.dataset.cat !== 'all' && n === 0;
+  }
+  const nArch = all.filter((v) => isArchived(v.id)).length;
+  $('#archiveCount').textContent = nArch;
+  archiveBox.classList.toggle('empty', nArch === 0);
+  $('#archiveHint').innerHTML = serverMode
+    ? '보관하면 파일이 실제로 <code>src/variants/archive/</code> 로 옮겨지고 라이브러리(<code>src/variants/index.js</code>)에서 빠집니다. 바뀐 파일은 git 으로 커밋하세요. 명령줄: <code>node tools/archive.mjs archive|restore &lt;id&gt;</code>'
+    : '개발 서버(<code>npm run dev</code> 또는 <code>dev.bat</code>)로 연 페이지가 아니라서, 보관 상태는 <b>이 브라우저에만</b> 기억되고 파일은 그대로입니다. 실제로 옮기려면 개발 서버로 열거나 <code>node tools/archive.mjs archive &lt;id&gt;</code> 를 쓰세요.';
+}
+
+async function toggleArchive(id) {
+  const to = isArchived(id) ? 'restore' : 'archive';
+  if (serverMode) {
+    try {
+      const r = await fetch(`/api/${to}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+      const j = await r.json();
+      if (!r.ok) { toast(`실패: ${j.error}`); return; }
+      if (to === 'archive') fileArchived.add(id); else fileArchived.delete(id);
+      toast(to === 'archive' ? `${id} → ${j.file} 로 옮겼습니다` : `${id} 를 라이브러리로 꺼냈습니다`);
+    } catch (e) { toast(`실패: ${e.message}`); return; }
+  } else {
+    if (to === 'restore' && fileArchived.has(id)) { toast('파일이 보관함 폴더에 있습니다. 개발 서버로 열어 꺼내세요'); return; }
+    if (to === 'archive') localArchived.add(id); else localArchived.delete(id);
+    saveLocal();
+    toast(to === 'archive' ? `${id} 를 보관함으로 (이 브라우저에만)` : `${id} 를 꺼냈습니다`);
+  }
+  place(id);
+  refreshCounts();
+  selectCategory(currentCat);
+}
 
 // ---- 순환 재생: 한 점 → 변형 → 한 점 → 다음 변형 … -------------------------------
-// 카테고리 순서대로 돌도록 정렬
-const ordered = categories.flatMap((c) => variants.filter((v) => v.category === c.id));
 const cycleCtl = mount($('#cycleStage'), {
-  variant: ordered.map((v) => v.id), size: 160, color: global.color, speed: global.speed, loops: 1, dwell: 3000,
+  variant: activeOrdered().map((v) => v.id), size: 160, color: global.color, speed: global.speed, loops: 1, dwell: 3000,
   reducedMotion: reducedMotionOpt(),
 });
 const cycleName = $('#cycleName'), cycleState = $('#cycleState');
@@ -144,31 +217,47 @@ $('#cycleNext').addEventListener('click', () => cycleCtl.next());
 const chipsEl = $('#chips');
 let currentCat = 'all';
 function selectCategory(id, { scroll = false } = {}) {
+  const active = activeOrdered();
+  if (id !== 'all' && !active.some((v) => v.category === id)) id = 'all';
   currentCat = id;
   for (const b of chipsEl.querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.cat === id));
-  for (const [cid, sec] of groupEls) sec.hidden = id !== 'all' && cid !== id;
-  const ids = (id === 'all' ? ordered : ordered.filter((v) => v.category === id)).map((v) => v.id);
+  for (const [cid, sec] of groupEls) sec.hidden = (id !== 'all' && cid !== id) || !active.some((v) => v.category === cid);
+  const ids = (id === 'all' ? active : active.filter((v) => v.category === id)).map((v) => v.id);
   cycleCtl.set({ variant: ids });      // 돌고 있으면 한 점을 거쳐 넘어간다
   if (cycleCtl.state === 'idle') cycleCtl.play();
   try { localStorage.setItem('dot-loaders.cat', id); } catch {}
   if (scroll) $('.featured').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
-const chip = (id, label, n) => {
+const chip = (id, label) => {
   const b = document.createElement('button');
   b.dataset.cat = id;
-  b.innerHTML = `${label}<span class="n">${n}</span>`;
+  b.innerHTML = `${label}<span class="n"></span>`;
   b.addEventListener('click', () => selectCategory(id));
   chipsEl.appendChild(b);
 };
-chip('all', '전체', variants.length);
-for (const c of categories) { const n = variants.filter((v) => v.category === c.id).length; if (n) chip(c.id, c.name, n); }
+chip('all', '전체');
+for (const c of categories) chip(c.id, c.name);
 groupsEl.addEventListener('click', (e) => {
   const id = e.target.closest('button[data-cycle]')?.dataset.cycle;
   if (id) selectCategory(id, { scroll: true });
 });
+for (const c of cards) place(c.v.id);
+refreshCounts();
 let savedCat = 'all';
 try { savedCat = localStorage.getItem('dot-loaders.cat') || 'all'; } catch {}
 selectCategory(groupEls.has(savedCat) ? savedCat : 'all');
+
+// 개발 서버면 실제 파일 보관 모드로
+fetch('/api/status', { cache: 'no-store' })
+  .then((r) => (r.ok ? r.json() : null))
+  .then((j) => {
+    if (!j?.archive) return;
+    serverMode = true;
+    for (const c of cards) place(c.v.id);   // 브라우저에만 보관했던 것은 다시 라이브러리로 보인다
+    refreshCounts();
+    selectCategory(currentCat);
+  })
+  .catch(() => {});
 
 // ---- 전역 컨트롤 ---------------------------------------------------------
 $('#size').addEventListener('change', (e) => {
