@@ -4,14 +4,15 @@
 //   node tools/bake.mjs <variant> [--phase loop|enter|exit|all] [--frame 48] [--fps 30]
 //                       [--color #d97757] [--bg none|#1f1e1d] [--out dist] [--contact]
 //
-// --all 대신 variant 자리에 all 을 주면 등록된 변형 전부를 굽는다.
+// variant 자리에 all 을 주면 라이브러리 변형 전부를, 쉼표로 이으면(ring,snake) 그것들만 굽는다.
 // --contact 를 주면 프레임을 가로 20개씩 늘어놓은 확인용 이미지(…contact.png)도 만든다.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { deflateSync } from 'node:zlib';
 import { join } from 'node:path';
 import { list, get, sample } from '../src/dots.js';
-import '../src/variants/index.js';
+import { variants } from '../src/variants/index.js';
+import '../src/variants/archive/index.js';   // 보관한 변형도 이름으로는 구울 수 있게 (all 에는 안 들어감)
 
 // ---- 인자 ------------------------------------------------------------------
 const args = process.argv.slice(2);
@@ -24,7 +25,7 @@ for (let i = 0; i < args.length; i++) {
   else target = a;
 }
 if (!target) {
-  console.error('사용법: node tools/bake.mjs <variant|all> [--phase loop|enter|exit|all] [--frame 48] [--fps 30] [--color #d97757] [--bg none|#rrggbb] [--out dist] [--contact]');
+  console.error('사용법: node tools/bake.mjs <variant[,variant…]|all> [--phase loop|enter|exit|all] [--frame 48] [--fps 30] [--color #d97757] [--bg none|#rrggbb] [--out dist] [--contact]');
   console.error('변형:', list().map((v) => v.id).join(', '));
   process.exit(1);
 }
@@ -142,7 +143,7 @@ function bake(v, phase) {
 }
 
 mkdirSync(opt.out, { recursive: true });
-const targets = target === 'all' ? list() : [get(target)];
+const targets = target === 'all' ? variants : target.split(',').filter(Boolean).map(get);
 const phases = opt.phase === 'all' ? ['enter', 'loop', 'exit'] : [opt.phase];
 for (const v of targets) {
   const manifest = { variant: v.id, frame: opt.frame, fps: opt.fps, color: opt.color, phases: {} };

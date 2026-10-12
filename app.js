@@ -2,6 +2,7 @@
 import { mount, bakeSpriteSheet, toPngBlob } from './src/dots.js';
 import { variants, categories } from './src/variants/index.js';
 import { archived as archivedVariants } from './src/variants/archive/index.js';
+import { buildHandoff, buildCode, cartHash, parseCartHash } from './cart.js';
 
 const $ = (sel) => document.querySelector(sel);
 const toastEl = $('#toast');
@@ -40,6 +41,11 @@ function syncMotionUI() {
 // ---- 카드 ----------------------------------------------------------------
 const global = { size: Number($('#size').value), speed: 1, color: $('#color').value };
 const cards = [];
+
+// 장바구니: 고른 변형 id (담은 순서). 이 브라우저에 기억하고, #cart=a,b 링크로 넘길 수 있다.
+let cart = [];
+try { cart = JSON.parse(localStorage.getItem('dot-loaders.cart') || '[]'); } catch {}
+let versionHash = null;   // version.json 이 있으면 CDN 주소를 그 커밋에 고정
 
 function download(blob, name) {
   const a = document.createElement('a');
@@ -86,6 +92,7 @@ function makeCard(v) {
       <button data-act="stop" title="이음새에서 퇴장">■</button>
       <button data-act="bake" title="PNG 스프라이트 시트 + json 내려받기">PNG 시트</button>
       <button data-act="copy" title="mount 호출 코드 복사">코드 복사</button>
+      <button data-act="cart" class="cart-btn"></button>
       <button data-act="archive" class="archive-btn"></button>
       <span class="state"></span>
     </div>`;
@@ -102,6 +109,7 @@ function makeCard(v) {
     else if (act === 'stop') { big.stop(); mini.stop(); }
     else if (act === 'bake') await bake(v);
     else if (act === 'archive') await toggleArchive(v.id);
+    else if (act === 'cart') toggleCart(v.id);
     else if (act === 'copy') {
       const code = `import { mount } from './src/dots.js';\nimport './src/variants/index.js';\n\nconst loader = mount(document.querySelector('#loader'), { variant: '${v.id}', size: 20, color: '${global.color}' });\n// loader.stop();  // 이음새에서 퇴장 후 사라짐`;
       try { await navigator.clipboard.writeText(code); toast('복사했습니다'); } catch { toast('클립보드를 쓸 수 없습니다'); }
@@ -197,6 +205,7 @@ async function toggleArchive(id) {
   place(id);
   refreshCounts();
   selectCategory(currentCat);
+  syncCart();   // 보관하면 전달문의 파일 경로가 바뀐다
 }
 
 // ---- 순환 재생: 한 점 → 변형 → 한 점 → 다음 변형 … -------------------------------
@@ -259,6 +268,71 @@ fetch('/api/status', { cache: 'no-store' })
   })
   .catch(() => {});
 
+// ---- 장바구니 ----------------------------------------------------------------
+// 다른 프로젝트에서 "이거이거만 쓴다" 를 넘길 때: 카드의 담기 → 전달문/코드/링크 복사, 시트 한꺼번에 굽기.
+const cartEl = $('#cart'), cartPanel = $('#cartPanel'), cartList = $('#cartList');
+cart = cart.filter((id) => byId.has(id));
+const fromHash = parseCartHash(location.hash, byId);
+if (fromHash) cart = fromHash;
+const cartItems = () => cart.map((id) => byId.get(id));
+const cartOpts = () => ({ size: 20, color: global.color, ref: versionHash ?? 'main', isArchived: (id) => fileArchived.has(id) });
+let cartCtl = null;
+
+function toggleCart(id) {
+  const had = cart.includes(id);
+  cart = had ? cart.filter((x) => x !== id) : [...cart, id];
+  toast(had ? `${id} 를 장바구니에서 뺐습니다` : `${id} 를 담았습니다 (${cart.length}개)`);
+  syncCart();
+}
+
+function syncCart() {
+  try { localStorage.setItem('dot-loaders.cart', JSON.stringify(cart)); } catch {}
+  for (const c of cards) {
+    const inCart = cart.includes(c.v.id);
+    c.card.classList.toggle('in-cart', inCart);
+    const b = c.card.querySelector('.cart-btn');
+    b.textContent = inCart ? '담음 ✓' : '담기';
+    b.title = inCart ? '장바구니에서 빼기' : '장바구니에 담기 (다른 프로젝트로 넘길 것만 고르기)';
+  }
+  $('#cartCount').textContent = cart.length;
+  cartEl.classList.toggle('empty', cart.length === 0);
+  cartList.innerHTML = cart.map((id) => `<li><code>${id}</code><span>${byId.get(id).name}</span><button data-remove="${id}" title="빼기">×</button></li>`).join('');
+  $('#cartPreview').textContent = buildHandoff(cartItems(), cartOpts()) || '카드의 "담기" 를 눌러 다른 프로젝트에서 쓸 변형만 고르세요.';
+  // 미리 보기 무대: 담은 것만 순환 (패널이 열려 있을 때만 돈다)
+  if (!cartPanel.hidden && cart.length) {
+    if (!cartCtl) cartCtl = mount($('#cartStage'), { variant: cart, size: 96, color: global.color, speed: global.speed, loops: 1, dwell: 2000, reducedMotion: reducedMotionOpt() });
+    else cartCtl.set({ variant: cart });
+    if (cartCtl.state === 'idle') cartCtl.play();
+  } else cartCtl?.stop();
+}
+
+function openCart(open) {
+  cartPanel.hidden = !open;
+  $('#cartToggle').setAttribute('aria-expanded', String(open));
+  syncCart();
+}
+$('#cartToggle').addEventListener('click', () => openCart(cartPanel.hidden));
+$('#cartClose').addEventListener('click', () => openCart(false));
+cartList.addEventListener('click', (e) => {
+  const id = e.target.closest('button[data-remove]')?.dataset.remove;
+  if (id) toggleCart(id);
+});
+async function copy(text, done) {
+  try { await navigator.clipboard.writeText(text); toast(done); } catch { toast('클립보드를 쓸 수 없습니다'); }
+}
+cartPanel.addEventListener('click', async (e) => {
+  const act = e.target.closest('button[data-cart]')?.dataset.cart;
+  if (!act) return;
+  if (act !== 'clear' && !cart.length) { toast('먼저 카드의 "담기" 로 변형을 고르세요'); return; }
+  if (act === 'handoff') await copy(buildHandoff(cartItems(), cartOpts()), `전달문을 복사했습니다 (${cart.length}개)`);
+  else if (act === 'code') await copy(buildCode(cartItems(), { ...cartOpts(), base: './dot-loaders' }), '코드를 복사했습니다');
+  else if (act === 'link') await copy(new URL(cartHash(cart), location.href.split('#')[0]).href, '링크를 복사했습니다');
+  else if (act === 'bake') { for (const v of cartItems()) await bake(v); }
+  else if (act === 'clear') { cart = []; syncCart(); toast('장바구니를 비웠습니다'); }
+});
+syncCart();
+if (fromHash?.length) openCart(true);
+
 // ---- 전역 컨트롤 ---------------------------------------------------------
 $('#size').addEventListener('change', (e) => {
   global.size = Number(e.target.value);
@@ -269,13 +343,16 @@ $('#speed').addEventListener('input', (e) => {
   $('#speedVal').textContent = `${global.speed.toFixed(2)}×`;
   for (const c of cards) { c.big.set({ speed: global.speed }); c.mini.set({ speed: global.speed }); }
   cycleCtl.set({ speed: global.speed });
+  cartCtl?.set({ speed: global.speed });
 });
 $('#color').addEventListener('input', (e) => {
   global.color = e.target.value;
   for (const c of cards) { c.big.set({ color: global.color }); c.mini.set({ color: global.color }); }
   cycleCtl.set({ color: global.color });
+  cartCtl?.set({ color: global.color });
+  syncCart();
 });
-const allCtls = () => [cycleCtl, ...cards.flatMap((c) => [c.big, c.mini])];
+const allCtls = () => [cycleCtl, ...(cartCtl ? [cartCtl] : []), ...cards.flatMap((c) => [c.big, c.mini])];
 $('#motion').addEventListener('change', (e) => {
   ignoreReduce = e.target.checked;
   try { localStorage.setItem('dot-loaders.ignoreReduce', ignoreReduce ? '1' : '0'); } catch {}
@@ -292,6 +369,8 @@ fetch('./version.json', { cache: 'no-store' })
   .then((r) => (r.ok ? r.json() : null))
   .then((j) => {
     if (!j?.hash) return;
+    versionHash = j.hash;
+    syncCart();
     const el = $('#version');
     el.innerHTML = '';
     const a = document.createElement('a');

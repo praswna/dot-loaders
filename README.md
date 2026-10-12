@@ -22,6 +22,17 @@ OS 의 **모션 축소**(Windows: 설정 → 접근성 → 시각 효과 → 애
 
 ## 다른 프로젝트에서 쓰기
 
+### 장바구니: 고른 것만 넘기기
+
+갤러리 카드의 **담기** 로 쓸 변형만 고른 뒤 왼쪽 아래 **🛒 장바구니** 를 연다. 담은 것만 순환하는 미리 보기와 함께:
+
+- **전달문 복사**: 변형 목록, 미리 보기 링크, 고른 것만 불러오는 코드(CDN 주소는 배포된 커밋에 고정), 복사할 파일 목록, 시트 굽기 명령을 한 글로. 다른 프로젝트(사람이든 AI 든)에 그대로 붙여 넣는다.
+- **코드만 복사**: `./dot-loaders/` 에 복사해 둔 경우의 import·register·mount 코드.
+- **링크 복사**: `…/#cart=orbit,snake` 처럼 장바구니를 담은 갤러리 주소. 열면 그 장바구니가 열린다.
+- **PNG 시트 모두**: 담은 변형의 시트와 json 을 한꺼번에 내려받기.
+
+장바구니는 이 브라우저에 기억된다. 전달문 만들기는 `cart.js` (DOM 없는 함수, `test/cart.test.mjs`).
+
 ### 웹 (ES 모듈)
 
 ```js
@@ -83,6 +94,7 @@ const { canvas, manifest } = bakeSpriteSheet('claude-code', { phase: 'loop', fra
 ```bash
 node tools/bake.mjs claude-code --out dist            # enter/loop/exit 시트 + json
 node tools/bake.mjs all --frame 64 --fps 30 --contact  # 전부, 프레임 확인용 contact 이미지 포함
+node tools/bake.mjs orbit,snake                        # 쉼표로 이으면 그것들만
 ```
 
 Windows 에서는 `bake.bat` 을 더블클릭하면 전부를 `dist\` 에 굽는다. 인자를 주면 그대로 `tools/bake.mjs` 에 넘긴다: `bake.bat claude-code --frame 64 --out C:\MyApp\Assets`.

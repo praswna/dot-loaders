@@ -13,7 +13,7 @@
   "files": ["src", "README.md", "LICENSE"],
   "scripts": {
     "dev": "node tools/serve.mjs 5173",
-    "test": "node test/engine.test.mjs",
+    "test": "node test/engine.test.mjs && node test/cart.test.mjs",
     "check": "node --check src/dots.js && node --check src/easing.js && node --input-type=module -e \"import('./src/variants/index.js').then(m=>console.log(m.variants.length+' variants OK'))\""
   },
   "license": "MIT"
