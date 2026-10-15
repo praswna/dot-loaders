@@ -29,12 +29,16 @@ import binary from './binary.js';
 import morse from './morse.js';
 import galaxy from './galaxy.js';
 import interference from './interference.js';
+import threeBody from './three-body.js';
+import tesseract from './tesseract.js';
+import quantum from './quantum.js';
+import fourier from './fourier.js';
 
 export const variants = [
   claudeCode, gridRotate, scissor, leapfrog, dice, breathe, orbit, helix,
   sineWave, constellation, typing, ring, cradle, mitosis, hourglass, snake,
   glider, juggle, radar, gears, infinity, firework, pong, binary,
-  morse, galaxy, interference,
+  morse, galaxy, interference, threeBody, tesseract, quantum, fourier,
 ].map(register);
 
 export { categories, categoryOf } from '../categories.js';
