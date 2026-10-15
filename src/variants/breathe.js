@@ -16,6 +16,7 @@ function loop(t) {
 export default {
   id: 'breathe',
   category: 'wave',
+  shape: '3x3',
   name: '숨쉬기',
   description: '3×3 격자가 가운데서 바깥으로 파도치듯 부풀었다 가라앉는다.',
   tags: ['3x3', '맥동'],

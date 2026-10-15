@@ -45,7 +45,10 @@ console.log(`ok  변형 ${list().length}개 장면 샘플링`);
   const { categories } = await import('../src/categories.js');
   const ids = new Set(categories.map((c) => c.id));
   for (const v of list()) assert.ok(ids.has(v.category), `${v.id}: 카테고리가 없거나 모름 (${v.category})`);
-  console.log(`ok  카테고리 ${categories.length}개에 변형 ${list().length}개 배정`);
+  const { shapes } = await import('../src/categories.js');
+  const sids = new Set(shapes.map((s) => s.id));
+  for (const v of list()) assert.ok(sids.has(v.shape), `${v.id}: 배치(shape)가 없거나 모름 (${v.shape})`);
+  console.log(`ok  카테고리 ${categories.length}개 × 배치 ${shapes.length}개에 변형 ${list().length}개 배정`);
 }
 
 // ---- 2. 상태 전이 ----------------------------------------------------------

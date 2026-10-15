@@ -20,6 +20,7 @@ function loop(t) {
 export default {
   id: 'galaxy',
   category: 'spin',
+  shape: 'circle',
   name: '은하',
   description: '나선 팔 셋이 돌며, 안쪽이 바깥보다 빨라 팔이 감겼다 풀린다.',
   tags: ['원형', '나선'],

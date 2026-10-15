@@ -35,6 +35,7 @@ function loop(t) {
 export default {
   id: 'cradle',
   category: 'physics',
+  shape: 'row',
   name: '뉴턴의 요람',
   description: '매달린 구슬 다섯. 양 끝이 번갈아 튀어 오르며 운동량을 넘긴다.',
   tags: ['물리', '선'],

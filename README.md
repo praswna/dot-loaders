@@ -142,7 +142,7 @@ node tools/archive.mjs list            # 보관된 것
 
 ```js
 export default {
-  id: 'my-loader', category: 'swap', name: '이름', description: '한 줄 설명', tags: ['2x2'],
+  id: 'my-loader', category: 'swap', shape: '2x2', name: '이름', description: '한 줄 설명', tags: ['2x2'],
   loop: {
     duration: 1200,            // ms
     seams: [0, 0.5],           // 여기서 멈추면 어색하지 않은 t (정지 요청 시 exit 로 넘어가는 지점)
@@ -170,6 +170,7 @@ npm test
 ## 들어 있는 변형
 
 움직임이 비슷한 것끼리 카테고리로 묶었다 (`src/categories.js`, 변형마다 `category`). 갤러리는 카테고리별로 보여 주고, 위쪽 칩이나 "이것만 순환" 으로 순환 무대를 그 카테고리만 돌게 할 수 있다.
+칩은 두 줄이다. 윗줄은 움직임 카테고리, 아랫줄은 점의 배치(`shape`: 가로줄·2×2·3×3·격자·원형·자유)로, 고른 카테고리 안에서 다시 거른다. 숫자는 그 칸에 든 변형 수.
 
 ### 자리 바꾸기 `swap`
 

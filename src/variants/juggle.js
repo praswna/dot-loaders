@@ -38,6 +38,7 @@ function loop(t) {
 export default {
   id: 'juggle',
   category: 'physics',
+  shape: 'free',
   name: '저글링',
   description: '공 세 개가 두 손 사이를 포물선으로 오간다.',
   tags: ['물리', '포물선'],

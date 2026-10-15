@@ -62,10 +62,24 @@
   .featured-info .actions { display: flex; gap: 6px; align-items: center; }
   .featured-info pre { margin: auto 0 0; padding: 10px 12px; background: var(--bg); border-radius: 8px; font: 12px/1.5 var(--mono); overflow: auto; }
   @media (max-width: 640px) { .featured { grid-template-columns: 1fr; } }
-  .chips { max-width: 1120px; margin: 18px auto 0; display: flex; flex-wrap: wrap; gap: 6px; }
-  .chips button { border-radius: 999px; padding: 4px 12px; font-size: 13px; }
-  .chips button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .chips button .n { opacity: .7; margin-left: 4px; font-size: 11px; }
+  .chips { max-width: 1120px; margin: 18px auto 0; display: flex; flex-direction: column; gap: 6px; }
+  .chip-row { position: relative; }
+  .chip-scroll { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 2px 0; }
+  .chip-scroll::-webkit-scrollbar { display: none; }
+  .chip-scroll button { flex: none; white-space: nowrap; }
+  .chip-row .chip-more {
+    position: absolute; right: 0; top: 0; bottom: 0; display: none; align-items: center; padding: 0 4px 0 22px;
+    border: 0; border-radius: 0; font-size: 18px; color: var(--text);
+    background: linear-gradient(to right, transparent, var(--bg) 45%);
+  }
+  .chip-row.more .chip-more { display: flex; }
+  .chips .n { margin-left: 5px; font-size: 11px; opacity: .6; }
+  .chips .top button { border-radius: 999px; padding: 6px 14px; font-size: 14px; }
+  .chips .top button[aria-pressed="true"] { background: var(--text); border-color: var(--text); color: var(--bg); font-weight: 600; }
+  .chips .sub button { background: none; border: 1.5px solid transparent; border-radius: 6px; padding: 2px 8px; color: var(--muted); font-size: 13px; }
+  .chips .sub button:hover { color: var(--text); }
+  .chips .sub button[aria-pressed="true"] { border-color: var(--accent); color: var(--text); font-weight: 600; }
+  .card[hidden] { display: none; }
   .group { max-width: 1120px; margin: 26px auto 0; }
   .group[hidden] { display: none; }
   .group > header { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; padding: 0; margin: 0; max-width: none; }
@@ -192,7 +206,10 @@ loader.next('dice');    // 특정 변형으로</code></pre>
   </div>
 </section>
 
-<nav class="chips" id="chips" aria-label="카테고리"></nav>
+<nav class="chips" aria-label="카테고리">
+  <div class="chip-row top"><div class="chip-scroll" id="chips"></div><button class="chip-more" aria-label="카테고리 더 보기" tabindex="-1">›</button></div>
+  <div class="chip-row sub"><div class="chip-scroll" id="subChips" aria-label="배치"></div><button class="chip-more" aria-label="배치 더 보기" tabindex="-1">›</button></div>
+</nav>
 
 <main id="groups"></main>
 

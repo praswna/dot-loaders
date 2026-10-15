@@ -25,6 +25,7 @@ function loop(t) {
 export default {
   id: 'scissor',
   category: 'swap',
+  shape: '2x2',
   name: '가위질',
   description: '대각선 두 짝이 반대 방향으로 동시에 돈다. 한 짝은 바깥, 한 짝은 안쪽으로 비껴 지나감.',
   tags: ['2x2', '회전'],

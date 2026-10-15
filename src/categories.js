@@ -11,3 +11,16 @@ export const categories = [
 ];
 
 export const categoryOf = (id) => categories.find((c) => c.id === id);
+
+// 두 번째 축: 점이 놓이는 배치. 갤러리에서 카테고리 칩 아래 줄(하위 칩)로 거른다.
+// 각 변형 파일의 `shape` 가 여기 id 중 하나여야 한다.
+export const shapes = [
+  { id: 'row',    name: '가로줄' },
+  { id: '2x2',    name: '2×2' },
+  { id: '3x3',    name: '3×3' },
+  { id: 'grid',   name: '격자' },
+  { id: 'circle', name: '원형' },
+  { id: 'free',   name: '자유' },
+];
+
+export const shapeOf = (id) => shapes.find((s) => s.id === id);

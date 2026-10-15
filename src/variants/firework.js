@@ -34,6 +34,7 @@ function loop(t) {
 export default {
   id: 'firework',
   category: 'physics',
+  shape: 'free',
   name: '불꽃놀이',
   description: '포탄이 올라가 터지고 불티가 퍼지며 내려앉는다.',
   tags: ['물리', '폭발'],

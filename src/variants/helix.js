@@ -20,6 +20,7 @@ function loop(t) {
 export default {
   id: 'helix',
   category: 'wave',
+  shape: 'row',
   name: '나선',
   description: '두 가닥이 DNA 처럼 꼬이며 흐른다. 마주 보는 점은 선으로 이어진다.',
   tags: ['가로', '3D', '선'],

@@ -38,6 +38,7 @@ function loop(t) {
 export default {
   id: 'hourglass',
   category: 'physics',
+  shape: 'free',
   name: '모래시계',
   description: '모래알이 목을 지나 떨어지고, 다 떨어지면 통째로 뒤집힌다.',
   tags: ['물리', '선', '변신'],

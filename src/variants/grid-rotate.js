@@ -22,6 +22,7 @@ function loop(t) {
 export default {
   id: 'grid-rotate',
   category: 'swap',
+  shape: '2x2',
   name: '네모 회전',
   description: '2×2 가 통째로 90도씩 돈다. 살짝 넘쳤다가 제자리.',
   tags: ['2x2', '회전'],

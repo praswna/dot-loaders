@@ -20,6 +20,7 @@ function loop(t) {
 export default {
   id: 'interference',
   category: 'wave',
+  shape: 'grid',
   name: '간섭무늬',
   description: '두 파원의 물결이 5×5 점 위에서 겹친다.',
   tags: ['5x5', '격자', '물결'],

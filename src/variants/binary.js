@@ -32,6 +32,7 @@ function loop(t) {
 export default {
   id: 'binary',
   category: 'grid',
+  shape: 'row',
   name: '이진 카운터',
   description: '네 점이 0000 부터 1111 까지 센다.',
   tags: ['가로', '숫자'],

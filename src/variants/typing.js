@@ -19,6 +19,7 @@ function loop(t) {
 export default {
   id: 'typing',
   category: 'wave',
+  shape: 'row',
   name: '입력 중',
   description: '채팅 "입력 중" 표시. 세 점이 차례로 튀어 오른다.',
   tags: ['가로', '고전'],

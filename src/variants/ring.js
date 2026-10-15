@@ -23,6 +23,7 @@ function loop(t) {
 export default {
   id: 'ring',
   category: 'spin',
+  shape: 'circle',
   name: '고리 스피너',
   description: '열두 점 고리를 밝은 머리가 돌며 꼬리를 남긴다.',
   tags: ['원형', '고전'],

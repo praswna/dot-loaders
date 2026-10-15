@@ -31,6 +31,7 @@ const loop = (t) => scene(t);
 export default {
   id: 'gears',
   category: 'spin',
+  shape: 'circle',
   name: '톱니바퀴',
   description: '톱니 8개와 6개짜리 바퀴가 맞물려 반대로 돈다.',
   tags: ['기계', '선', '원형'],

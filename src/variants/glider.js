@@ -40,6 +40,7 @@ function loop(t) {
 export default {
   id: 'glider',
   category: 'grid',
+  shape: 'grid',
   name: '글라이더',
   description: '콘웨이 생명 게임의 글라이더가 5×5 토러스를 기어간다. 20세대에 한 바퀴.',
   tags: ['5x5', '격자', '세포자동자'],

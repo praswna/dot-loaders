@@ -32,6 +32,7 @@ function loop(t) {
 export default {
   id: 'snake',
   category: 'grid',
+  shape: 'grid',
   name: '스네이크',
   description: '4×4 격자를 한 바퀴 도는 길을 따라 다섯 마디 뱀이 기어간다.',
   tags: ['4x4', '격자', '게임'],

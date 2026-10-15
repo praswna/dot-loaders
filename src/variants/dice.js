@@ -31,6 +31,7 @@ function loop(t) {
 export default {
   id: 'dice',
   category: 'morph',
+  shape: '3x3',
   name: '주사위',
   description: '점이 주사위 눈 1부터 6까지 차례로 변한다.',
   tags: ['3x3', '변신'],

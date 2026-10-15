@@ -36,6 +36,7 @@ function loop(t) {
 export default {
   id: 'radar',
   category: 'spin',
+  shape: 'circle',
   name: '레이더',
   description: '탐지선이 돌며 지나간 자리의 표적이 밝아졌다가 식는다.',
   tags: ['원형', '선'],

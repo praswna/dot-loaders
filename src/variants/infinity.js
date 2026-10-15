@@ -24,6 +24,7 @@ const loop = (t) => scene(t);
 export default {
   id: 'infinity',
   category: 'drift',
+  shape: 'free',
   name: '무한',
   description: '점들이 ∞ 곡선을 따라 꼬리를 끌며 달린다.',
   tags: ['곡선', '꼬리'],

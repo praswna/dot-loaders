@@ -26,6 +26,7 @@ function loop(t) {
 export default {
   id: 'pong',
   category: 'physics',
+  shape: 'free',
   name: '퐁',
   description: '공이 채와 벽 사이를 튀고, 채가 공을 따라간다.',
   tags: ['게임', '물리'],
