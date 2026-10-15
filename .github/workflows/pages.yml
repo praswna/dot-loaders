@@ -29,6 +29,8 @@ jobs:
           printf '{"hash":"%s","builtAt":"%s","repo":"%s"}\n' \
             "${GITHUB_SHA::7}" "$(TZ=Asia/Seoul date '+%Y.%m.%d %H:%M')" "${GITHUB_REPOSITORY}" > version.json
           cat version.json
+      - name: 모듈 주소에 커밋 붙이기 (브라우저 캐시가 옛 파일과 섞이지 않게)
+        run: node tools/stamp.mjs "${GITHUB_SHA::7}"
       - uses: actions/configure-pages@v5
         with:
           enablement: true   # Pages 가 꺼져 있으면 켠다 (Source = GitHub Actions)
