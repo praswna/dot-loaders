@@ -43,6 +43,9 @@ import coupled from './coupled.js';
 import orbital from './orbital.js';
 import klein from './klein.js';
 import brownian from './brownian.js';
+import lorenz from './lorenz.js';
+import tree from './tree.js';
+import jitterbug from './jitterbug.js';
 
 export const variants = [
   claudeCode, gridRotate, scissor, leapfrog, dice, breathe, orbit, helix,
@@ -51,6 +54,7 @@ export const variants = [
   morse, galaxy, interference, threeBody, tesseract, quantum, fourier,
   drum, kepler, tautochrone, hopf, mobius,
   trefoil, coupled, orbital, klein, brownian,
+  lorenz, tree, jitterbug,
 ].map(register);
 
 export { categories, categoryOf } from '../categories.js';

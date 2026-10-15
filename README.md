@@ -110,7 +110,7 @@ Windows 에서는 `bake.bat` 을 더블클릭하면 전부를 `dist\` 에 굽는
 | `register(variant)` | 변형 등록 |
 | `get(id)`, `list()` | 등록된 변형 조회 |
 | `mount(target, options)` | 캔버스(또는 부모 요소)에 붙이고 컨트롤러 반환 |
-| `sample(variant, phase, t, seam?)` | 한 장면(점 목록) 계산. `exit` 는 `seam`(이음새 t)에서 이어진다 |
+| `sample(variant, phase, t, seam?, view?)` | 한 장면(점 목록) 계산. `exit` 는 `seam`(이음새 t)에서 이어진다. `view = { size }` 를 주면 그 크기용 장면 |
 | `POINT` | 모든 변형이 거쳐 가는 한 점 `{x:.5, y:.5, r:.065}` |
 | `draw(ctx, frame, {size, color, background, offsetX, offsetY})` | 장면을 2D 컨텍스트에 그림 |
 | `bakeSpriteSheet(variant, {phase, frame, fps, color, background, scale})` | 세로 시트 캔버스 + 매니페스트 |
@@ -147,7 +147,7 @@ export default {
     duration: 1200,            // ms
     seams: [0, 0.5],           // 여기서 멈추면 어색하지 않은 t (정지 요청 시 exit 로 넘어가는 지점)
     rest: 0,                   // 모션 축소일 때 보여 줄 t
-    frame(t) {                 // t: 0..1
+    frame(t, seam, view) {     // t: 0..1, view.size: 그려질 크기(px, 모를 수도 있음)
       return [{ x: 0.5, y: 0.5, r: 0.1, alpha: 1 }];
       // 또는 { dots: [...], links: [{ a: 0, b: 1, alpha: 0.3, width: 0.012 }] }
     },
@@ -158,6 +158,8 @@ export default {
 ```
 
 직접 쓸 때도 `enter` 의 t=0 과 `exit` 의 t=1 은 가운데 한 점(`POINT`)이어야 한다. 테스트가 이를 검사한다.
+
+**작은 크기:** 엔진은 그릴 크기를 `view.size` 로 넘긴다(`mount` 의 `size`, 시트의 `frame`). `isSmall(view)`(36px 미만, `src/easing.js`)이면 점·선 수를 줄이고 굵혀서 20px 에서도 모양이 읽히게 한다. 수학·물리 변형들이 이렇게 한다. 크기를 모르면(`sample` 에 view 없이) 큰 쪽으로 그린다. 선은 어느 크기에서든 최소 0.8px 로 그린다.
 
 이징은 `src/easing.js` 에 모아 두었다 (`seg`, `lerp`, `easeOutBack`, `cubicBezier`, `polar` …).
 
@@ -268,6 +270,9 @@ npm test
 | `orbital` | 3d 오비탈 | 수소 3d_z² 확률밀도에서 기각 표집한 점 구름. 위아래 덩어리와 가운데 고리가 돎 |
 | `klein` | 클라인 병 | 8자 몰입. 긴 방향 선의 끝이 뒤집혀 처음과 이어지고, 구슬은 두 바퀴를 돌아야 제자리 |
 | `brownian` | 브라운 고리 | 크기 1/k 인 푸리에 급수(카르후넨–뢰브)로 만든 닫힌 브라운 경로. 제멋대로 같지만 정확히 반복 |
+| `lorenz` | 로렌츠 끌개 | 혼돈 방정식(σ=10, ρ=28, β=8/3)을 RK4 로 적분한 나비 끌개 위를 구슬 셋이 달림. 궤적은 반복하지 않고, 구슬이 사라졌다 돌아오며 이어짐 |
+| `tree` | 프랙털 나무 | 가지가 0.68 배 닮은 가지 둘로 갈라지기를 되풀이. 갈래 각이 숨 쉬고 바람이 끝가지를 더 흔듦 |
+| `jitterbug` | 지터버그 | 정삼각형 8장이 변 길이를 지키며(a² + b² − ab = 1) 비틀려 육팔면체 → 정이십면체 → 정팔면체 (풀러) |
 
 ## 배포
 

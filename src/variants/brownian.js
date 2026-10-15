@@ -3,6 +3,8 @@
 //   X(t) = Σ_{k=1..K} (aₖ cos 2πkt + bₖ sin 2πkt) / k,   aₖ, bₖ ~ 정규분포 (고정된 씨앗)
 // 정수 진동수만 쓰니 t=1 에서 정확히 처음으로 돌아온다. 입자 셋이 지나온 자취를 꼬리로 남긴다.
 
+import { isSmall } from '../easing.js';
+
 function rng(seed) {
   return () => {
     seed = (seed + 0x6d2b79f5) | 0;
@@ -32,17 +34,19 @@ const FIT = PATHS.map((p) => {                 // 경로마다 화면 안에 들
 });
 
 const TRAIL = 22, STEP = 0.004;
-function loop(t) {
+function loop(t, _seam, view) {
+  const small = isSmall(view), trail = small ? 8 : TRAIL, step = small ? STEP * 2.5 : STEP;   // 작게: 꼬리 성기고 굵게
   const dots = [];
   PATHS.forEach((p, i) => {
     const { s, cx, cy } = FIT[i];
     const at = (u) => { const [x, y] = raw(p, u); return [0.5 + s * (x - cx), 0.5 + s * (y - cy)]; };
-    for (let k = TRAIL; k >= 1; k--) {
-      const [x, y] = at(t - k * STEP);
-      dots.push({ x, y, r: 0.006 + 0.014 * (1 - k / (TRAIL + 1)), alpha: 0.45 * (1 - k / (TRAIL + 1)) });
+    for (let k = trail; k >= 1; k--) {
+      const [x, y] = at(t - k * step);
+      const f = 1 - k / (trail + 1);
+      dots.push({ x, y, r: small ? 0.022 + 0.022 * f : 0.006 + 0.014 * f, alpha: 0.45 * f });
     }
     const [x, y] = at(t);
-    dots.push({ x, y, r: 0.046, alpha: 1 - 0.2 * i });
+    dots.push({ x, y, r: small ? 0.07 : 0.046, alpha: 1 - 0.2 * i });
   });
   return dots;
 }

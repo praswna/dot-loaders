@@ -28,8 +28,8 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 for (const v of list()) {
   for (const phase of ['enter', 'loop', 'exit']) {
     if (!v[phase]) continue;
-    for (let i = 0; i <= 50; i++) {
-      const f = sample(v, phase, i / 50);
+    for (let i = 0; i <= 50; i++) for (const view of [{}, { size: 20 }]) {
+      const f = sample(v, phase, i / 50, 0, view);
       assert.ok(f.dots.length > 0, `${v.id}.${phase}: 점이 없음`);
       for (const d of f.dots) {
         assert.ok(Number.isFinite(d.x) && Number.isFinite(d.y) && Number.isFinite(d.r), `${v.id}.${phase} t=${i / 50}: 좌표가 유한하지 않음`);
@@ -84,8 +84,11 @@ console.log(`ok  변형 ${list().length}개 장면 샘플링`);
   };
   for (const v of list()) {
     assert.ok(v.enter && v.exit, `${v.id}: enter/exit 가 있어야 함`);
-    onePoint(sample(v, 'enter', 0), `${v.id}.enter t=0`);
-    for (const seam of v.loop.seams ?? [0]) onePoint(sample(v, 'exit', 1, seam), `${v.id}.exit t=1 seam=${seam}`);
+    for (const view of [{}, { size: 20 }]) {   // 큰 장면과 작은 크기용 장면 모두
+      const tag = view.size ? ` ${view.size}px` : '';
+      onePoint(sample(v, 'enter', 0, 0, view), `${v.id}.enter t=0${tag}`);
+      for (const seam of v.loop.seams ?? [0]) onePoint(sample(v, 'exit', 1, seam, view), `${v.id}.exit t=1 seam=${seam}${tag}`);
+    }
     // 공통 exit 는 이음새 장면에서 이어진다
     if (v.exit.generic) {
       const seam = (v.loop.seams ?? [0])[0];

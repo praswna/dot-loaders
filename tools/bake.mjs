@@ -83,7 +83,7 @@ class Raster {
     if (!frame) return;
     for (const l of frame.links) {
       const a = frame.dots[l.a], b = frame.dots[l.b];
-      if (a && b) this.line(ox + a.x * size, oy + a.y * size, ox + b.x * size, oy + b.y * size, (l.width ?? 0.02) * size, COLOR, l.alpha ?? 0.4);
+      if (a && b) this.line(ox + a.x * size, oy + a.y * size, ox + b.x * size, oy + b.y * size, Math.max(0.8, (l.width ?? 0.02) * size), COLOR, l.alpha ?? 0.4);   // dots.js draw 와 같은 최소 굵기
     }
     for (const d of frame.dots) if (d.r > 0) this.circle(ox + d.x * size, oy + d.y * size, d.r * size, COLOR, d.alpha ?? 1);
   }
@@ -121,7 +121,7 @@ function bake(v, phase) {
   const framesData = [];
   for (let i = 0; i < frames; i++) {
     const t = phase === 'loop' ? i / frames : i / Math.max(1, frames - 1);
-    const f = sample(v, phase, t);
+    const f = sample(v, phase, t, 0, { size: px });
     framesData.push(f);
     sheet.drawFrame(f, px, 0, i * px);
   }

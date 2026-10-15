@@ -3,6 +3,8 @@
 // 세 물체는 같은 곡선 위에서 주기의 1/3 씩 어긋나 있어서, 1/3 주기마다 장면이 (번호만 바뀐 채) 똑같아진다.
 // 그래서 반복 한 바퀴 = 1/3 주기. 가운데를 지날 때 빨라지고 바깥 고리에서 느려지는 건 실제 속도다.
 
+import { isSmall } from '../easing.js';
+
 const T = 6.32591398;                       // 주기 (G = m = 1)
 const STEPS = 3600;                          // 적분 걸음 (RK4)
 const SAMPLES = 720;                         // 곡선 표 크기
@@ -55,16 +57,18 @@ function at(phase) {                        // phase: 0..1 (한 주기)
 }
 
 const TRAIL = 7, GAP = 0.012;               // 꼬리: 지나온 자리에 옅은 작은 점
-function loop(t) {
+function loop(t, _seam, view) {
+  const small = isSmall(view), trail = small ? 3 : TRAIL, gap = small ? GAP * 2 : GAP;   // 작게: 꼬리 짧고 굵게
   const dots = [];
   for (let b = 0; b < 3; b++) {
     const phase = t / 3 + b / 3;
-    for (let k = TRAIL; k >= 1; k--) {
-      const [x, y] = at(phase - k * GAP);
-      dots.push({ x, y, r: 0.026 * (1 - k / (TRAIL + 1)) + 0.006, alpha: 0.5 * (1 - k / (TRAIL + 1)) });
+    for (let k = trail; k >= 1; k--) {
+      const [x, y] = at(phase - k * gap);
+      const f = 1 - k / (trail + 1);
+      dots.push({ x, y, r: small ? 0.03 + 0.03 * f : 0.026 * f + 0.006, alpha: 0.5 * f });
     }
     const [x, y] = at(phase);
-    dots.push({ x, y, r: 0.068 });
+    dots.push({ x, y, r: small ? 0.09 : 0.068 });
   }
   return dots;
 }

@@ -2,6 +2,8 @@
 // 위아래 두 덩어리와 가운데 고리(도넛)가 이 오비탈의 모양. 점은 고정된 씨앗으로 기각 표집해서 매번 같다.
 // 오비탈은 z 축 대칭이라, 기울인 채 z 축으로 한 바퀴 도는 동안 모양이 달라 보이지 않고 점들만 흘러간다.
 
+import { isSmall } from '../easing.js';
+
 function rng(seed) {                         // mulberry32
   return () => {
     seed = (seed + 0x6d2b79f5) | 0;
@@ -28,15 +30,16 @@ const CLOUD = (() => {
 })();
 
 const TILT = 0.3, SCALE = 0.36;
-function loop(t) {
+function loop(t, _seam, view) {
+  const small = isSmall(view), cloud = small ? CLOUD.slice(0, 50) : CLOUD;   // 작게: 점 수를 줄이고 크게
   const a = 2 * Math.PI * t, c = Math.cos(a), s = Math.sin(a), ct = Math.cos(TILT), st = Math.sin(TILT);
-  const dots = [{ x: 0.5, y: 0.5, r: 0.034, alpha: 1 }];   // 원자핵
-  for (const [x0, y0, z0] of CLOUD) {
+  const dots = [{ x: 0.5, y: 0.5, r: small ? 0.05 : 0.034, alpha: 1 }];   // 원자핵
+  for (const [x0, y0, z0] of cloud) {
     const x = c * x0 - s * y0, y = s * x0 + c * y0;
     // z 를 화면 위쪽으로 세우고 살짝 앞으로 기울임
     const sy = -(ct * z0 - st * y), depth = st * z0 + ct * y;
     const d = Math.max(0, Math.min(1, 0.5 + depth * 0.5));
-    dots.push({ x: 0.5 + SCALE * x, y: 0.5 + SCALE * sy, r: 0.006 + 0.01 * d, alpha: 0.25 + 0.65 * d });
+    dots.push({ x: 0.5 + SCALE * x, y: 0.5 + SCALE * sy, r: small ? 0.022 + 0.014 * d : 0.006 + 0.01 * d, alpha: 0.25 + 0.65 * d });
   }
   return dots;
 }

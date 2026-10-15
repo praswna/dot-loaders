@@ -3,6 +3,10 @@
 export const clamp01 = (t) => (t < 0 ? 0 : t > 1 ? 1 : t);
 export const lerp = (a, b, t) => a + (b - a) * t;
 
+/** 그려질 크기가 작은가 (36px 미만). frame(t, seam, view) 의 view 로 판단. 크기를 모르면 크다고 본다. */
+export const SMALL_PX = 36;
+export const isSmall = (view) => (view?.size ?? Infinity) < SMALL_PX;
+
 /** 구간 [a,b] 를 0..1 로 정규화하고 바깥은 잘라낸다. */
 export const seg = (t, a, b) => clamp01((t - a) / (b - a));
 

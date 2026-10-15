@@ -3,6 +3,8 @@
 // 하트 x = 16 sin³s, y = 13 cos s − 5 cos 2s − 2 cos 3s − cos 4s 는 유한 푸리에 급수라 원 몇 개면 정확히 그려진다.
 // 마디는 작은 점, 팔은 선, 끝점은 큰 점에 꼬리.
 
+import { isSmall } from '../easing.js';
+
 const M = 128;                               // DFT 표본 수
 const heart = (s) => [16 * Math.sin(s) ** 3, 13 * Math.cos(s) - 5 * Math.cos(2 * s) - 2 * Math.cos(3 * s) - Math.cos(4 * s)];
 
@@ -40,20 +42,23 @@ function chain(s) {                           // 각 원의 중심(마디)들, �
 
 const TRAIL = 22, STEP = 0.018;
 const OUTLINE = Array.from({ length: 48 }, (_, i) => toScreen(...heart((2 * Math.PI * i) / 48)));   // 그려질 하트 (옅게)
-function loop(t) {
+function loop(t, _seam, view) {
+  const small = isSmall(view);                   // 작게: 하트 윤곽은 빼고, 꼬리는 성기고 굵게, 팔은 굵게
+  const trail = small ? 9 : TRAIL, step = small ? STEP * 2.4 : STEP;
   const s = 2 * Math.PI * t;
   const joints = chain(s);
-  const dots = OUTLINE.map(([x, y]) => ({ x, y, r: 0.007, alpha: 0.22 }));
+  const dots = small ? [] : OUTLINE.map(([x, y]) => ({ x, y, r: 0.007, alpha: 0.22 }));
   const links = [];
-  for (let k = TRAIL; k >= 1; k--) {
-    const tip = chain(s - k * STEP * 2 * Math.PI).at(-1);
-    dots.push({ x: tip[0], y: tip[1], r: 0.008 + 0.02 * (1 - k / (TRAIL + 1)), alpha: 0.7 * (1 - k / (TRAIL + 1)) });
+  for (let k = trail; k >= 1; k--) {
+    const tip = chain(s - k * step * 2 * Math.PI).at(-1);
+    const f = 1 - k / (trail + 1);
+    dots.push({ x: tip[0], y: tip[1], r: small ? 0.025 + 0.02 * f : 0.008 + 0.02 * f, alpha: 0.7 * f });
   }
   const base = dots.length;
   joints.forEach(([x, y], i) => {
     const last = i === joints.length - 1;
-    dots.push({ x, y, r: last ? 0.062 : i === 0 ? 0.032 : 0.022, alpha: last ? 1 : 0.75 });
-    if (i > 0) links.push({ a: base + i - 1, b: base + i, width: 0.014, alpha: 0.6 });
+    dots.push({ x, y, r: last ? (small ? 0.08 : 0.062) : small ? 0.035 : i === 0 ? 0.032 : 0.022, alpha: last ? 1 : 0.75 });
+    if (i > 0) links.push({ a: base + i - 1, b: base + i, width: small ? 0.04 : 0.014, alpha: 0.6 });
   });
   return { dots, links };
 }

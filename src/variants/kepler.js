@@ -3,6 +3,8 @@
 // 위치는 케플러 방정식 M = E − e sin E 를 뉴턴법으로 풀어 구한다.
 // 안쪽 행성은 공전 주기가 절반이라 제3법칙(T² ∝ a³)에 따라 긴반지름이 2^(−2/3) 배. 2:1 공명이라 한 바퀴가 이어진다.
 
+import { isSmall } from '../easing.js';
+
 const SUN = [0.64, 0.5];
 const PLANETS = [
   { a: 0.34, e: 0.6, turn: 0, n: 1, r: 0.048 },
@@ -21,17 +23,19 @@ function place({ a, e, turn }, E) {           // 초점(태양) 기준 위치, �
   return [SUN[0] + c * x - s * y, SUN[1] + s * x + c * y];
 }
 
-const PATHS = PLANETS.map((p) => Array.from({ length: 40 }, (_, i) => place(p, (2 * Math.PI * i) / 40)));
+const orbitDots = (n) => PLANETS.map((p) => Array.from({ length: n }, (_, i) => place(p, (2 * Math.PI * i) / n)));
+const PATHS = orbitDots(40), PATHS_SMALL = orbitDots(14);
 
-function loop(t) {
+function loop(t, _seam, view) {
+  const small = isSmall(view);                   // 작게: 궤도 점은 성기고 크게, 반지름 선은 굵게
   const dots = [];
-  for (const path of PATHS) for (const [x, y] of path) dots.push({ x, y, r: 0.007, alpha: 0.25 });
+  for (const path of small ? PATHS_SMALL : PATHS) for (const [x, y] of path) dots.push({ x, y, r: small ? 0.018 : 0.007, alpha: small ? 0.35 : 0.25 });
   dots.push({ x: SUN[0], y: SUN[1], r: 0.072 });
   const sun = dots.length - 1, links = [];
   for (const p of PLANETS) {
     const [x, y] = place(p, solveE(2 * Math.PI * p.n * t, p.e));
-    dots.push({ x, y, r: p.r });
-    if (p.n === 1) links.push({ a: sun, b: dots.length - 1, width: 0.012, alpha: 0.35 });
+    dots.push({ x, y, r: small ? p.r * 1.35 : p.r });
+    if (p.n === 1) links.push({ a: sun, b: dots.length - 1, width: small ? 0.035 : 0.012, alpha: 0.35 });
   }
   return { dots, links };
 }

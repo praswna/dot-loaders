@@ -16,6 +16,8 @@
 //   seams: 정지 요청이 들어왔을 때 exit 로 넘어가도 어색하지 않은 t 값들 (기본 [0])
 //   rest:  모션 축소 설정일 때 멈춰 보여 줄 t (기본 0)
 //   exit.frame(t, seam): seam 은 loop 에서 빠져나온 이음새 t. 그 장면에서 이어서 퇴장할 수 있다.
+//   frame(t, seam, view): view = { size } 는 그려질 크기(px). 없으면 크다고 본다.
+//     작은 크기(isSmall(view), 36px 미만)에서는 점·선을 줄이고 굵혀서 알아보기 쉽게 그려도 된다.
 //
 // 한 점 규칙: 모든 변형은 "한 점"(POINT, 가운데 작은 점)에서 퍼져 나와 시작하고, 끝날 때는 한 점으로 모인다.
 // enter/exit 를 직접 쓰지 않은 변형에는 register 가 공통 전이(gather)를 붙인다. 덕분에
@@ -45,16 +47,16 @@ function gather(frame, k, r1 = SWELL) {
 }
 /** 공통 등장: 작은 점이 부풀었다가 장면으로 퍼진다. */
 function genericEnter(loop) {
-  return (u) => {
-    const frame = normalize(loop.frame(0));
+  return (u, _seam, view) => {
+    const frame = normalize(loop.frame(0, 0, view));
     if (u < 0.3) return gather(frame, 1, lerp(POINT.r, SWELL, easeInQuad(u / 0.3)));
     return gather(frame, 1 - easeOutCubic(seg(u, 0.3, 1)));
   };
 }
 /** 공통 퇴장: 이음새 장면이 가운데로 모여 하나가 되고 작아진다. */
 function genericExit(loop) {
-  return (u, seam = 0) => {
-    const frame = normalize(loop.frame(clamp01(seam)));
+  return (u, seam = 0, view) => {
+    const frame = normalize(loop.frame(clamp01(seam), 0, view));
     if (u < 0.6) return gather(frame, easeInQuad(u / 0.6));
     return gather(frame, 1, lerp(SWELL, POINT.r, easeOutQuad(seg(u, 0.6, 1))));
   };
@@ -86,11 +88,11 @@ export function list() {
 const resolve = (v) => (typeof v === 'string' ? get(v) : v);
 
 /** 한 장면을 계산한다. phase 가 없는 변형이면 null. seam 은 exit 가 이어받을 loop 의 이음새 t. */
-export function sample(variant, phase, t, seam = 0) {
+export function sample(variant, phase, t, seam = 0, view = {}) {
   const v = resolve(variant);
   const p = v[phase];
   if (!p) return null;
-  return normalize(p.frame(clamp01(t), seam));
+  return normalize(p.frame(clamp01(t), seam, view));
 }
 
 /** 장면 하나를 2D 컨텍스트에 그린다. size 는 픽셀 한 변. */
@@ -109,7 +111,7 @@ export function draw(ctx, frame, { size, color = '#d97757', background = null, o
     if (!a || !b) continue;
     ctx.globalAlpha = l.alpha ?? 0.4;
     ctx.strokeStyle = color;
-    ctx.lineWidth = (l.width ?? 0.02) * size;
+    ctx.lineWidth = Math.max(0.8, (l.width ?? 0.02) * size);   // 작은 크기에서도 선이 사라지지 않게
     ctx.beginPath();
     ctx.moveTo(a.x * size, a.y * size);
     ctx.lineTo(b.x * size, b.y * size);
@@ -174,6 +176,7 @@ export function mount(target, options = {}) {
   const listeners = new Set();
   const after = (v) => cycle[(cycle.indexOf(v) + 1) % cycle.length] ?? v;
 
+  const at = (phase, t, seam = 0) => sample(variant, phase, t, seam, { size: opts.size });
   const render = (frame) => {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, opts.size, opts.size);
@@ -200,7 +203,7 @@ export function mount(target, options = {}) {
       if (nextVariant || (cycle.length > 1 && stayed >= Math.max(opts.dwell, durationOf('loop') * opts.loops))) {
         variant = nextVariant ?? after(variant); nextVariant = null; setState('loop', now);
       }
-      render(sample(variant, 'loop', variant.loop.rest ?? 0));
+      render(at('loop', variant.loop.rest ?? 0));
       // 순환 중이거나 설정이 바뀔 수 있으니 계속 틱을 돌린다 (정지 화면이라 비용은 작다)
       if (cycle.length > 1 || opts.reducedMotion === 'auto') raf = requestAnimationFrame(tick);
       return;
@@ -218,24 +221,24 @@ export function mount(target, options = {}) {
           stopRequested = false;
           exitSeam = seam;
           setState('exit', now);
-          render(sample(variant, 'exit', 0, exitSeam));
+          render(at('exit', 0, exitSeam));
           raf = requestAnimationFrame(tick);
           return;
         }
       }
-      render(sample(variant, 'loop', tl));
+      render(at('loop', tl));
       prevT = tl;
     } else if (state === 'enter') {
-      if (t >= 1) { setState('loop', now); render(sample(variant, 'loop', 0)); }
-      else render(sample(variant, 'enter', t));
+      if (t >= 1) { setState('loop', now); render(at('loop', 0)); }
+      else render(at('enter', t));
     } else if (state === 'exit') {
       if (t >= 1) {
         if (nextVariant) {
           // 한 점에서 다음 변형으로 퍼진다
           variant = nextVariant; nextVariant = null;
-          setState('enter', now); render(sample(variant, 'enter', 0));
+          setState('enter', now); render(at('enter', 0));
         } else { setState('idle', now); render(null); return; }
-      } else render(sample(variant, 'exit', t, exitSeam));
+      } else render(at('exit', t, exitSeam));
     }
     raf = requestAnimationFrame(tick);
   }
@@ -302,12 +305,12 @@ export function mount(target, options = {}) {
       if (next.size !== undefined) fit();
       if (next.reducedMotion !== undefined && state !== 'idle') { phaseStart = now; prevT = 0; }
       if (state === 'idle') render(null);
-      else if (paused) render(sample(variant, state, ((now - phaseStart) / durationOf(state)) % 1));
+      else if (paused) render(at(state, ((now - phaseStart) / durationOf(state)) % 1));
       else schedule();
       return api;
     },
     /** 특정 장면을 멈춰서 그린다 (디버깅·썸네일용). */
-    seek(phase, t) { paused = true; cancel(); render(sample(variant, phase, t)); return api; },
+    seek(phase, t) { paused = true; cancel(); render(at(phase, t)); return api; },
     onState(fn) { listeners.add(fn); return () => listeners.delete(fn); },
     destroy() { cancel(); listeners.clear(); if (canvas !== target) canvas.remove(); },
   };
@@ -337,7 +340,7 @@ export function bakeSpriteSheet(variant, {
   for (let i = 0; i < frames; i++) {
     // loop 는 t=1 이 t=0 과 같으니 마지막 프레임을 빼고, enter/exit 는 끝 장면까지 포함
     const t = phase === 'loop' ? i / frames : i / Math.max(1, frames - 1);
-    draw(ctx, sample(v, phase, t, v.loop.rest ?? 0), { size: px, color, background, offsetY: i * px });
+    draw(ctx, sample(v, phase, t, v.loop.rest ?? 0, { size: px }), { size: px, color, background, offsetY: i * px });
   }
   const manifest = { variant: v.id, phase, frames, speed: +speed.toFixed(4), frame: px, fps };
   if (phase === 'exit') manifest.seam = Math.round((v.loop.rest ?? 0) * Math.max(1, Math.round(v.loop.duration / speed)));
