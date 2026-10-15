@@ -8,7 +8,7 @@ export const categories = [
   { id: 'morph',  name: '변신',       description: '점의 수나 배치가 바뀌며 다른 모양이 된다.' },
   { id: 'grid',   name: '격자·신호',   description: '격자 칸을 한 걸음씩 옮겨 가거나, 켜고 꺼서 무언가를 센다.' },
   { id: 'drift',  name: '흐름',       description: '곡선을 따라 미끄러지듯 흘러가며 궤적을 남긴다.' },
-  { id: 'science', name: '수학·물리', description: '실제 방정식을 풀어 움직인다. 삼체 문제, 4차원 회전, 양자 파동, 푸리에 급수, 베셀 함수, 케플러, 위상수학.' },
+  { id: 'science', name: '수학·물리', description: '실제 방정식을 풀어 움직인다. 삼체 문제, 4차원 회전, 양자 파동, 푸리에 급수, 베셀 함수, 케플러, 매듭, 위상수학, 확률.' },
 ];
 
 export const categoryOf = (id) => categories.find((c) => c.id === id);

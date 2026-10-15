@@ -38,6 +38,11 @@ import kepler from './kepler.js';
 import tautochrone from './tautochrone.js';
 import hopf from './hopf.js';
 import mobius from './mobius.js';
+import trefoil from './trefoil.js';
+import coupled from './coupled.js';
+import orbital from './orbital.js';
+import klein from './klein.js';
+import brownian from './brownian.js';
 
 export const variants = [
   claudeCode, gridRotate, scissor, leapfrog, dice, breathe, orbit, helix,
@@ -45,6 +50,7 @@ export const variants = [
   glider, juggle, radar, gears, infinity, firework, pong, binary,
   morse, galaxy, interference, threeBody, tesseract, quantum, fourier,
   drum, kepler, tautochrone, hopf, mobius,
+  trefoil, coupled, orbital, klein, brownian,
 ].map(register);
 
 export { categories, categoryOf } from '../categories.js';
