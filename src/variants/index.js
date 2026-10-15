@@ -33,12 +33,18 @@ import threeBody from './three-body.js';
 import tesseract from './tesseract.js';
 import quantum from './quantum.js';
 import fourier from './fourier.js';
+import drum from './drum.js';
+import kepler from './kepler.js';
+import tautochrone from './tautochrone.js';
+import hopf from './hopf.js';
+import mobius from './mobius.js';
 
 export const variants = [
   claudeCode, gridRotate, scissor, leapfrog, dice, breathe, orbit, helix,
   sineWave, constellation, typing, ring, cradle, mitosis, hourglass, snake,
   glider, juggle, radar, gears, infinity, firework, pong, binary,
   morse, galaxy, interference, threeBody, tesseract, quantum, fourier,
+  drum, kepler, tautochrone, hopf, mobius,
 ].map(register);
 
 export { categories, categoryOf } from '../categories.js';
