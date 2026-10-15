@@ -23,46 +23,18 @@
     font: 14px/1.5 system-ui, "Pretendard", "Malgun Gothic", sans-serif;
     padding: 0 16px 80px;
   }
-  header { max-width: 1120px; margin: 0 auto; padding: 28px 0 16px; }
-  h1 { font-size: 22px; margin: 0 0 4px; }
-  h1 small { font-weight: 400; color: var(--muted); font-size: 13px; margin-left: 8px; }
-  .lead { color: var(--muted); margin: 0 0 16px; }
-  .controls {
-    display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center;
-    padding: 12px 14px; background: var(--card); border: 1px solid var(--line); border-radius: 12px;
-  }
-  .controls label { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); white-space: nowrap; }
-  .controls select, .controls input[type=number] {
-    font: inherit; color: var(--text); background: var(--btn); border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px;
-  }
-  .controls input[type=range] { width: 120px; accent-color: var(--accent); }
-  .controls input[type=color] { width: 34px; height: 26px; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: none; }
   button {
     font: inherit; color: var(--text); background: var(--btn); border: 1px solid var(--line);
     border-radius: 8px; padding: 5px 10px; cursor: pointer;
   }
   button:hover { background: var(--btn-hover); }
   button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .notice label { white-space: nowrap; margin-left: 4px; }
   .notice {
     max-width: 1120px; margin: 14px auto 0; padding: 10px 14px; border-radius: 10px; font-size: 13px;
     background: color-mix(in srgb, var(--accent) 12%, var(--card)); border: 1px solid var(--accent); color: var(--text);
   }
-  .featured {
-    max-width: 1120px; margin: 18px auto 0; display: grid; grid-template-columns: 260px 1fr; gap: 16px;
-    background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px;
-  }
-  .featured .stage {
-    display: flex; align-items: center; justify-content: center; height: 220px; border-radius: 10px; background: var(--bg);
-    background-image: radial-gradient(var(--line) 0.6px, transparent 0.6px); background-size: 12px 12px;
-  }
-  .featured-info { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-  .featured-info h2 { font-size: 16px; margin: 0; display: flex; align-items: baseline; gap: 10px; }
-  .featured-info h2 code { font: 13px var(--mono); color: var(--accent); font-weight: 400; }
-  .featured-info p { margin: 0; color: var(--muted); font-size: 13px; }
-  .featured-info .actions { display: flex; gap: 6px; align-items: center; }
-  .featured-info pre { margin: auto 0 0; padding: 10px 12px; background: var(--bg); border-radius: 8px; font: 12px/1.5 var(--mono); overflow: auto; }
-  @media (max-width: 640px) { .featured { grid-template-columns: 1fr; } }
-  .chips { max-width: 1120px; margin: 18px auto 0; display: flex; flex-direction: column; gap: 6px; }
+  .chips { max-width: 1120px; margin: 24px auto 0; display: flex; flex-direction: column; gap: 6px; }
   .chip-row { position: relative; }
   .chip-scroll { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 2px 0; }
   .chip-scroll::-webkit-scrollbar { display: none; }
@@ -159,52 +131,10 @@
   .cart-actions button { font-size: 13px; padding: 4px 9px; }
   .cart details summary { cursor: pointer; color: var(--muted); font-size: 12px; }
   .cart pre { margin: 6px 0 0; padding: 10px; background: var(--bg); border-radius: 8px; font: 11px/1.5 var(--mono); white-space: pre-wrap; word-break: break-all; }
-  @media (max-width: 480px) { .controls input[type=range] { width: 90px; } }
 </style>
 </head>
 <body>
-<header>
-  <h1>dot-loaders <small>점으로 만든 대기 애니메이션 연구실</small></h1>
-  <p class="lead">각 카드는 한 변형(variant)입니다. 왼쪽은 선택한 크기, 오른쪽은 실제 UI 에 들어갈 20px 크기. ▶ 로 등장·반복, ■ 로 이음새에서 퇴장. 모든 변형은 가운데 <b>한 점</b>에서 퍼져 나오고 한 점으로 모이므로, 변형 사이를 끊김 없이 오갈 수 있습니다.</p>
-  <div class="controls">
-    <label>크기
-      <select id="size">
-        <option value="32">32px</option>
-        <option value="48">48px</option>
-        <option value="72" selected>72px</option>
-        <option value="96">96px</option>
-        <option value="128">128px</option>
-      </select>
-    </label>
-    <label>속도 <input id="speed" type="range" min="0.25" max="2" step="0.05" value="1"> <span id="speedVal">1.00×</span></label>
-    <label>색 <input id="color" type="color" value="#d97757"></label>
-    <label>굽기 프레임 <input id="bakeFrame" type="number" min="16" max="256" value="48" style="width:64px"></label>
-    <label>fps <input id="bakeFps" type="number" min="10" max="60" value="30" style="width:56px"></label>
-    <label id="motionWrap" hidden title="OS 의 모션 축소(애니메이션 효과 끔) 설정이 켜져 있습니다. 끄면 이 페이지에서만 움직입니다"><input id="motion" type="checkbox"> OS 모션 축소 무시</label>
-    <button id="theme">🌓 테마</button>
-    <button id="playAll">모두 ▶</button>
-    <button id="stopAll">모두 ■</button>
-  </div>
-</header>
-
-<p class="notice" id="motionNotice" hidden>OS 의 <b>모션 축소</b>(Windows: 설정 → 접근성 → 시각 효과 → 애니메이션 효과) 가 켜져 있어 정지 화면만 보입니다. 위의 "OS 모션 축소 무시" 를 켜면 이 페이지에서만 움직입니다.</p>
-
-<section class="featured">
-  <div class="stage"><div id="cycleStage"></div></div>
-  <div class="featured-info">
-    <h2>순환 재생 <code id="cycleName"></code></h2>
-    <p>한 점 → 변형 → 한 점 → 다음 변형 … 모든 변형을 차례로 돕니다. 각 변형은 한 바퀴 이상, 3초 이상 돈 뒤 다음 이음새에서 한 점으로 모였다가 다음으로 퍼집니다.</p>
-    <div class="actions">
-      <button id="cyclePlay" title="등장 → 순환">▶</button>
-      <button id="cycleStop" title="이음새에서 한 점으로 모여 사라짐">■</button>
-      <button id="cycleNext" title="다음 이음새에서 한 점을 거쳐 다음 변형으로">다음 ⏭</button>
-      <span class="state" id="cycleState"></span>
-    </div>
-    <pre><code>mount(el, { variant: ['claude-code', 'ring', 'snake'], loops: 1, dwell: 3000 });
-loader.next();          // 다음 변형으로 (한 점을 거쳐)
-loader.next('dice');    // 특정 변형으로</code></pre>
-  </div>
-</section>
+<p class="notice" id="motionNotice" hidden>OS 의 <b>모션 축소</b>(Windows: 설정 → 접근성 → 시각 효과 → 애니메이션 효과) 가 켜져 있어 정지 화면만 보입니다. <label><input id="motion" type="checkbox"> 이 페이지에서만 무시하고 움직이기</label></p>
 
 <nav class="chips" aria-label="카테고리">
   <div class="chip-row top"><div class="chip-scroll" id="chips"></div><button class="chip-more" aria-label="카테고리 더 보기" tabindex="-1">›</button></div>

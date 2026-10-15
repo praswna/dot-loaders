@@ -24,7 +24,6 @@ function applyTheme(t) {
 let theme = 'light';
 try { theme = localStorage.getItem('dot-loaders.theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); } catch {}
 applyTheme(theme);
-$('#theme').addEventListener('click', () => applyTheme(root.dataset.theme === 'dark' ? 'light' : 'dark'));
 
 // ---- 모션 축소 ------------------------------------------------------------
 // OS 설정이 켜져 있으면 엔진은 정지 화면만 그린다. 갤러리에서는 알려 주고, 원하면 이 페이지에서만 무시한다.
@@ -34,13 +33,12 @@ try { ignoreReduce = localStorage.getItem('dot-loaders.ignoreReduce') === '1'; }
 const reducedMotionOpt = () => (ignoreReduce ? false : 'auto');
 function syncMotionUI() {
   const on = reduceMql.matches;
-  $('#motionWrap').hidden = !on;
-  $('#motionNotice').hidden = !on || ignoreReduce;
+  $('#motionNotice').hidden = !on;
   $('#motion').checked = ignoreReduce;
 }
 
 // ---- 카드 ----------------------------------------------------------------
-const global = { size: Number($('#size').value), speed: 1, color: $('#color').value };
+const global = { size: 72, speed: 1, color: '#d97757' };
 const cards = [];
 
 // 장바구니: 고른 변형 id (담은 순서). 이 브라우저에 기억하고, #cart=a,b 링크로 넘길 수 있다.
@@ -59,8 +57,7 @@ function download(blob, name) {
 }
 
 async function bake(v) {
-  const frame = Number($('#bakeFrame').value) || 48;
-  const fps = Number($('#bakeFps').value) || 30;
+  const frame = 48, fps = 30;
   const phases = ['enter', 'loop', 'exit'].filter((p) => v[p]);
   const manifest = { variant: v.id, frame, fps, color: global.color, phases: {} };
   for (const phase of phases) {
@@ -139,7 +136,7 @@ for (const c of categories) {
   const sec = document.createElement('section');
   sec.className = 'group';
   sec.dataset.cat = c.id;
-  sec.innerHTML = `<header><h2>${c.name}</h2><p>${c.description}</p><button data-cycle="${c.id}" title="위 무대에서 이 카테고리만 순환">이것만 순환 ▶</button></header><div class="grid"></div>`;
+  sec.innerHTML = `<header><h2>${c.name}</h2><p>${c.description}</p></header><div class="grid"></div>`;
   groupsEl.appendChild(sec);
   groupEls.set(c.id, sec);
 }
@@ -209,27 +206,13 @@ async function toggleArchive(id) {
   syncCart();   // 보관하면 전달문의 파일 경로가 바뀐다
 }
 
-// ---- 순환 재생: 한 점 → 변형 → 한 점 → 다음 변형 … -------------------------------
-const cycleCtl = mount($('#cycleStage'), {
-  variant: activeOrdered().map((v) => v.id), size: 160, color: global.color, speed: global.speed, loops: 1, dwell: 3000,
-  reducedMotion: reducedMotionOpt(),
-});
-const cycleName = $('#cycleName'), cycleState = $('#cycleState');
-const catName = (id) => categories.find((c) => c.id === id)?.name ?? '';
-const showCycle = (s) => { cycleName.textContent = `${catName(cycleCtl.variant.category)} · ${cycleCtl.variant.id}`; cycleState.textContent = s; };
-cycleCtl.onState(showCycle);
-showCycle(cycleCtl.state);
-$('#cyclePlay').addEventListener('click', () => cycleCtl.play());
-$('#cycleStop').addEventListener('click', () => cycleCtl.stop());
-$('#cycleNext').addEventListener('click', () => cycleCtl.next());
-
-// ---- 이중 칩 필터: 윗줄 카테고리(움직임) → 아랫줄 배치(shape). 카드를 거르고, 순환 무대도 그것만 돈다 ----
+// ---- 이중 칩 필터: 윗줄 카테고리(움직임) → 아랫줄 배치(shape)로 카드를 거른다 ----
 const chipsEl = $('#chips'), subChipsEl = $('#subChips');
 let currentCat = 'all', currentShape = 'all';
 const inCat = (v, cat) => cat === 'all' || v.category === cat;
 const inShape = (v, sh) => sh === 'all' || v.shape === sh;
 
-function selectCategory(id, { scroll = false, shape = 'all' } = {}) {
+function selectCategory(id, { shape = 'all' } = {}) {
   const active = activeOrdered();
   if (id !== 'all' && !active.some((v) => v.category === id)) id = 'all';
   const pool = active.filter((v) => inCat(v, id));
@@ -251,14 +234,11 @@ function selectCategory(id, { scroll = false, shape = 'all' } = {}) {
   const shownIds = new Set(shown.map((v) => v.id));
   for (const c of cards) if (!isArchived(c.v.id)) c.card.hidden = !shownIds.has(c.v.id);
   for (const [cid, sec] of groupEls) sec.hidden = !shown.some((v) => v.category === cid);
-  cycleCtl.set({ variant: shown.map((v) => v.id) });      // 돌고 있으면 한 점을 거쳐 넘어간다
-  if (cycleCtl.state === 'idle') cycleCtl.play();
   try { localStorage.setItem('dot-loaders.cat', id); localStorage.setItem('dot-loaders.shape', shape); } catch {}
   for (const row of document.querySelectorAll('.chip-row')) syncMore(row);
   // 고른 하위 칩이 가려져 있으면 그 줄만 가로로 옮긴다 (페이지는 움직이지 않게)
   const on = subChipsEl.querySelector('[aria-pressed="true"]');
   if (on && (on.offsetLeft < subChipsEl.scrollLeft || on.offsetLeft + on.offsetWidth > subChipsEl.scrollLeft + subChipsEl.clientWidth)) subChipsEl.scrollLeft = on.offsetLeft - 16;
-  if (scroll) $('.featured').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 const chip = (id, label) => {
   const b = document.createElement('button');
@@ -284,10 +264,6 @@ for (const row of document.querySelectorAll('.chip-row')) {
   row.querySelector('.chip-more').addEventListener('click', () => sc.scrollBy({ left: sc.clientWidth * 0.7, behavior: 'smooth' }));
 }
 addEventListener('resize', () => { for (const row of document.querySelectorAll('.chip-row')) syncMore(row); });
-groupsEl.addEventListener('click', (e) => {
-  const id = e.target.closest('button[data-cycle]')?.dataset.cycle;
-  if (id) selectCategory(id, { scroll: true });
-});
 for (const c of cards) place(c.v.id);
 refreshCounts();
 let savedCat = 'all', savedShape = 'all';
@@ -371,26 +347,8 @@ cartPanel.addEventListener('click', async (e) => {
 syncCart();
 if (fromHash?.length) openCart(true);
 
-// ---- 전역 컨트롤 ---------------------------------------------------------
-$('#size').addEventListener('change', (e) => {
-  global.size = Number(e.target.value);
-  for (const c of cards) c.big.set({ size: global.size });
-});
-$('#speed').addEventListener('input', (e) => {
-  global.speed = Number(e.target.value);
-  $('#speedVal').textContent = `${global.speed.toFixed(2)}×`;
-  for (const c of cards) { c.big.set({ speed: global.speed }); c.mini.set({ speed: global.speed }); }
-  cycleCtl.set({ speed: global.speed });
-  cartCtl?.set({ speed: global.speed });
-});
-$('#color').addEventListener('input', (e) => {
-  global.color = e.target.value;
-  for (const c of cards) { c.big.set({ color: global.color }); c.mini.set({ color: global.color }); }
-  cycleCtl.set({ color: global.color });
-  cartCtl?.set({ color: global.color });
-  syncCart();
-});
-const allCtls = () => [cycleCtl, ...(cartCtl ? [cartCtl] : []), ...cards.flatMap((c) => [c.big, c.mini])];
+// ---- 모션 축소 무시 스위치 ---------------------------------------------------
+const allCtls = () => [...(cartCtl ? [cartCtl] : []), ...cards.flatMap((c) => [c.big, c.mini])];
 $('#motion').addEventListener('change', (e) => {
   ignoreReduce = e.target.checked;
   try { localStorage.setItem('dot-loaders.ignoreReduce', ignoreReduce ? '1' : '0'); } catch {}
@@ -399,8 +357,6 @@ $('#motion').addEventListener('change', (e) => {
 });
 reduceMql.addEventListener?.('change', syncMotionUI);
 syncMotionUI();
-$('#playAll').addEventListener('click', () => { for (const c of cards) { c.big.play(); c.mini.play(); } });
-$('#stopAll').addEventListener('click', () => { for (const c of cards) { c.big.stop(); c.mini.stop(); } });
 
 // ---- 버전 표시 (GitHub Pages 배포 때 version.json 이 생성됨) ----------------
 fetch('./version.json', { cache: 'no-store' })
